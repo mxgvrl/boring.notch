@@ -51,6 +51,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Shelf") {
                     Label("Shelf", systemImage: "books.vertical")
                 }
+                NavigationLink(value: "Translator") {
+                    Label("Translator", systemImage: "character.bubble")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -85,6 +88,8 @@ struct SettingsView: View {
                     Charge()
                 case "Shelf":
                     Shelf()
+                case "Translator":
+                    TranslatorSettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":
@@ -1739,6 +1744,11 @@ struct Shortcuts: View {
             }
             Section {
                 KeyboardShortcuts.Recorder("Toggle Notch Open:", name: .toggleNotchOpen)
+            }
+            Section {
+                KeyboardShortcuts.Recorder("Translate Selection:", name: .translateSelection)
+            } header: {
+                Text("Translator")
             }
         }
         .accentColor(.effectiveAccent)

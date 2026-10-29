@@ -188,7 +188,18 @@ extension Defaults.Keys {
     static let customAccentColorData = Key<Data?>("customAccentColorData", default: nil)
     // Show or hide the title bar
     static let hideTitleBar = Key<Bool>("hideTitleBar", default: true)
-    
+
+    // MARK: Translator
+    static let showTranslatorTab = Key<Bool>("showTranslatorTab", default: true)
+    // Stored in the sandboxed prefs plist, not Keychain: ad-hoc dev builds change signature on
+    // every rebuild, which would trigger a Keychain access prompt after each install.
+    static let deeplAPIKey = Key<String>("deeplAPIKey", default: "")
+    // DeepL codes; nil means automatic
+    static let translatorSource = Key<String?>("translatorSource", default: nil)
+    static let translatorTarget = Key<String?>("translatorTarget", default: nil)
+    // Target codes (EN-US, not EN), pinned at the top of the language menus
+    static let translatorStarredLanguages = Key<[String]>("translatorStarredLanguages", default: ["RU", "EN-US"])
+
     // Helper to determine the default media controller based on NowPlaying deprecation status
     static var defaultMediaController: MediaControllerType {
         if MusicManager.shared.isNowPlayingDeprecated {

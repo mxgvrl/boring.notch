@@ -109,6 +109,12 @@ class BoringNotchSkyLightWindow: NSPanel {
     
     private var observers: Set<AnyCancellable> = []
     
-    override var canBecomeKey: Bool { false }
+    // Only the Translator tab takes keyboard input; as a non-activating panel this doesn't
+    // activate the app or steal focus until its text field is clicked.
+    override var canBecomeKey: Bool {
+        MainActor.assumeIsolated {
+            BoringViewCoordinator.shared.currentView == .translator
+        }
+    }
     override var canBecomeMain: Bool { false }
 }

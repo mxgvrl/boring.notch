@@ -48,12 +48,22 @@ mediaremote-adapter/            готовый MediaRemoteAdapter.framework (б�
 
 ### Навигация по вкладкам
 
-1. `enums/generic.swift` → `enum NotchViews { case home, shelf }` — какие вкладки существуют.
-2. `components/Tabs/TabSelectionView.swift` → `let tabs = [TabModel(label:icon:view:)]` — кнопки в шапке (иконка — SF Symbol). Клик ставит `BoringViewCoordinator.shared.currentView`.
-3. `ContentView.swift` (~стр. 345) → `switch coordinator.currentView { case .home: NotchHomeView(...); case .shelf: ShelfView() }` — какой view рисуется в открытом вырезе.
-4. `components/Notch/BoringHeader.swift` — переключатель вкладок показывается только если `Defaults[.boringShelf]` включён и (shelf не пуст или `coordinator.alwaysShowTabs`).
+1. `enums/generic.swift` → `enum NotchViews { case home, shelf, translator }` — какие вкладки существуют.
+2. `components/Tabs/TabSelectionView.swift` → `let tabs = [TabModel(label:icon:view:)]` — кнопки в шапке (иконка — SF Symbol); `visibleTabs` прячет выключенные в настройках. Клик ставит `BoringViewCoordinator.shared.currentView`.
+3. `ContentView.swift` (~стр. 345) → `switch coordinator.currentView { case .home: NotchHomeView(...); case .shelf: ShelfView(); case .translator: TranslatorView() }` — какой view рисуется в открытом вырезе.
+4. `components/Notch/BoringHeader.swift` — переключатель вкладок показывается, если доступен Shelf (`Defaults[.boringShelf]` и shelf не пуст или `coordinator.alwaysShowTabs`) или включён переводчик (`Defaults[.showTranslatorTab]`).
 
-Добавить вкладку = новый case в `NotchViews` + элемент в `tabs` + ветка в `switch` в `ContentView` (Swift заставит обработать case во всех `switch`).
+Добавить вкладку = новый case в `NotchViews` + элемент в `tabs` (и в `visibleTabs`) + ветка в `switch` в `ContentView` (Swift заставит обработать case во всех `switch`).
+
+### Вкладка Translator (кастомная)
+
+- `components/Translator/TranslatorManager.swift` — состояние, DeepL-клиент (`DeepLClient`, ключ `:fx` → api-free; `/v2/translate`, `/v2/languages`), выбор языков, избранные языки, захват выделения (синтетический ⌘C через XPC-хелпер, буфер восстанавливается). Модель `TranslatorLanguage` + запасной список языков на случай, если `/v2/languages` недоступен.
+- `components/Translator/TranslatorView.swift` — UI вкладки (`LanguageMenu` источника/цели, кнопка ⇄) и `TranslatorSettings` (раздел настроек «Translator», включая список Starred languages).
+- Языки: `Defaults[.translatorSource]` / `[.translatorTarget]` (nil = авто: источник определяет DeepL, цель «любой → RU, RU → EN»), `[.translatorStarredLanguages]` — коды целей (`EN-US`, не `EN`); для меню источника сравниваются по базовому коду.
+- Ключ DeepL — `Defaults[.deeplAPIKey]` (plist в контейнере песочницы; не Keychain, т.к. ad-hoc подпись меняется при каждой сборке).
+- Ввод с клавиатуры: окно выреза (`BoringNotchSkyLightWindow.canBecomeKey`) может стать key только на вкладке translator. Пока поле в фокусе или открыто меню языков (`TranslatorManager.keepsNotchOpen`), hover-out не закрывает вырез. При уходе с вкладки фокус возвращается через `orderOut` + `orderFrontRegardless`.
+- Хоткей `.translateSelection` (⌃⌥T) — обработчик в `boringNotchApp.swift`, нажатие ⌘C — `postCopyShortcut` в `BoringNotchXPCHelper` (протокол продублирован в `BoringNotchXPCHelper/` и `boringNotch/XPCHelperClient/` — менять оба).
+- Нужен доступ Accessibility. После каждой ad-hoc пересборки macOS может перестать его признавать: удалить Boring Notch из списка в System Settings → Privacy & Security → Accessibility и выдать заново.
 
 ### Как устроена одна вкладка
 

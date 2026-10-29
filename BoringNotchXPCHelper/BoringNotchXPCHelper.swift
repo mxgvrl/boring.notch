@@ -139,6 +139,28 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         reply(false)
     }
 
+    // MARK: - Copy shortcut (Translator)
+
+    @objc func postCopyShortcut(with reply: @escaping (Bool) -> Void) {
+        guard AXIsProcessTrusted() else {
+            reply(false)
+            return
+        }
+        let keyC: CGKeyCode = 8 // kVK_ANSI_C
+        let source = CGEventSource(stateID: .combinedSessionState)
+        guard let down = CGEvent(keyboardEventSource: source, virtualKey: keyC, keyDown: true),
+              let up = CGEvent(keyboardEventSource: source, virtualKey: keyC, keyDown: false) else {
+            reply(false)
+            return
+        }
+        // Explicit flags so modifiers still held from the trigger hotkey don't leak in
+        down.flags = .maskCommand
+        up.flags = .maskCommand
+        down.post(tap: .cghidEventTap)
+        up.post(tap: .cghidEventTap)
+        reply(true)
+    }
+
     // MARK: - Private helpers for DisplayServices / IOKit access
     private func displayServicesGetBrightness(displayID: CGDirectDisplayID, out: inout Float) -> Bool {
         guard let sym = dlsym(DisplayServicesHandle.handle, "DisplayServicesGetBrightness") else { return false }

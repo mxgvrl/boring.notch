@@ -410,6 +410,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        KeyboardShortcuts.onKeyUp(for: .translateSelection) { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self = self, Defaults[.showTranslatorTab] else { return }
+
+                await TranslatorManager.shared.translateSelection()
+
+                let (viewModel, window) = self.notchUnderMouse()
+                self.closeNotchTask?.cancel()
+                self.coordinator.currentView = .translator
+                viewModel.open()
+
+                // Auto-close unless the pointer is over the notch (hover-out closes it then)
+                // or the user is typing in the translator field.
+                self.closeNotchTask = Task { @MainActor [weak viewModel, weak window] in
+                    while !Task.isCancelled {
+                        try? await Task.sleep(for: .seconds(8))
+                        guard !Task.isCancelled, let viewModel, viewModel.notchState == .open else { return }
+                        let hovering = window?.frame.contains(NSEvent.mouseLocation) ?? false
+                        if !hovering && !TranslatorManager.shared.keepsNotchOpen {
+                            viewModel.close()
+                            return
+                        }
+                        if hovering { return }
+                    }
+                }
+            }
+        }
+
         if !Defaults[.showOnAllDisplays] {
             let viewModel = self.vm
             let window = createBoringNotchWindow(
@@ -552,6 +580,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showMenu() {
         statusItem?.menu?.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+    }
+
+    /// The notch view model and window on the screen under the pointer (or the single notch).
+    private func notchUnderMouse() -> (BoringViewModel, NSWindow?) {
+        guard Defaults[.showOnAllDisplays] else { return (vm, window) }
+        let mouseLocation = NSEvent.mouseLocation
+        for screen in NSScreen.screens where screen.frame.contains(mouseLocation) {
+            if let uuid = screen.displayUUID, let screenViewModel = viewModels[uuid] {
+                return (screenViewModel, windows[uuid])
+            }
+        }
+        return (vm, window)
     }
 
     @objc func quitAction() {
