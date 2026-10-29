@@ -18,13 +18,15 @@ struct TabModel: Identifiable {
 let tabs = [
     TabModel(label: "Home", icon: "house.fill", view: .home),
     TabModel(label: "Shelf", icon: "tray.fill", view: .shelf),
-    TabModel(label: "Translator", icon: "character.bubble.fill", view: .translator)
+    TabModel(label: "Translator", icon: "character.bubble.fill", view: .translator),
+    TabModel(label: "Ask AI", icon: "sparkles", view: .aiChat)
 ]
 
 struct TabSelectionView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.boringShelf) var boringShelf
     @Default(.showTranslatorTab) var showTranslatorTab
+    @Default(.showAIChatTab) var showAIChatTab
     @Namespace var animation
 
     private var visibleTabs: [TabModel] {
@@ -33,6 +35,7 @@ struct TabSelectionView: View {
             case .home: return true
             case .shelf: return boringShelf
             case .translator: return showTranslatorTab
+            case .aiChat: return showAIChatTab
             }
         }
     }

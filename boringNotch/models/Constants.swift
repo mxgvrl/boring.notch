@@ -200,6 +200,12 @@ extension Defaults.Keys {
     // Target codes (EN-US, not EN), pinned at the top of the language menus
     static let translatorStarredLanguages = Key<[String]>("translatorStarredLanguages", default: ["RU", "EN-US"])
 
+    // MARK: Ask AI
+    static let showAIChatTab = Key<Bool>("showAIChatTab", default: true)
+    // Plist in the sandbox container, not Keychain (same reason as deeplAPIKey).
+    static let anthropicAPIKey = Key<String>("anthropicAPIKey", default: "")
+    static let aiChatWebSearch = Key<Bool>("aiChatWebSearch", default: true)
+
     // Helper to determine the default media controller based on NowPlaying deprecation status
     static var defaultMediaController: MediaControllerType {
         if MusicManager.shared.isNowPlayingDeprecated {

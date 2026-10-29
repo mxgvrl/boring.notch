@@ -428,13 +428,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         try? await Task.sleep(for: .seconds(8))
                         guard !Task.isCancelled, let viewModel, viewModel.notchState == .open else { return }
                         let hovering = window?.frame.contains(NSEvent.mouseLocation) ?? false
-                        if !hovering && !TranslatorManager.shared.keepsNotchOpen {
+                        if !hovering && !TranslatorManager.shared.keepsNotchOpen && !AIChatManager.shared.keepsNotchOpen {
                             viewModel.close()
                             return
                         }
                         if hovering { return }
                     }
                 }
+            }
+        }
+
+        KeyboardShortcuts.onKeyUp(for: .openAIChat) { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self = self, Defaults[.showAIChatTab] else { return }
+                let (viewModel, _) = self.notchUnderMouse()
+                self.closeNotchTask?.cancel()
+                self.coordinator.currentView = .aiChat
+                viewModel.open()
+                // The focused field holds the notch open via keepsNotchOpen.
+                AIChatManager.shared.focusRequest += 1
             }
         }
 

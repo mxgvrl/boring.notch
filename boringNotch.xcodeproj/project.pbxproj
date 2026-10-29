@@ -145,6 +145,9 @@
 		F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */; };
 		C0DE7A110000000000000002 /* TranslatorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE7A110000000000000001 /* TranslatorManager.swift */; };
 		C0DE7A110000000000000004 /* TranslatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE7A110000000000000003 /* TranslatorView.swift */; };
+		C0DE7A120000000000000002 /* AIChatProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE7A120000000000000001 /* AIChatProvider.swift */; };
+		C0DE7A120000000000000004 /* AIChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE7A120000000000000003 /* AIChatManager.swift */; };
+		C0DE7A120000000000000006 /* AIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE7A120000000000000005 /* AIChatView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -313,6 +316,9 @@
 		F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryActivityManager.swift; sourceTree = "<group>"; };
 		C0DE7A110000000000000001 /* TranslatorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorManager.swift; sourceTree = "<group>"; };
 		C0DE7A110000000000000003 /* TranslatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslatorView.swift; sourceTree = "<group>"; };
+		C0DE7A120000000000000001 /* AIChatProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatProvider.swift; sourceTree = "<group>"; };
+		C0DE7A120000000000000003 /* AIChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatManager.swift; sourceTree = "<group>"; };
+		C0DE7A120000000000000005 /* AIChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -500,6 +506,7 @@
 				B186542F2C6F455E000B926A /* Notch */,
 				9A0887332C7AFF7E00C160EA /* Tabs */,
 				C0DE7A110000000000000005 /* Translator */,
+				C0DE7A120000000000000007 /* AIChat */,
 				B186542E2C6F453B000B926A /* Music */,
 				14D570BF2C5EA5870011E668 /* AnimatedFace.swift */,
 				14288DE72C6E01C800B9F80C /* ProgressIndicator.swift */,
@@ -771,6 +778,16 @@
 			path = Translator;
 			sourceTree = "<group>";
 		};
+		C0DE7A120000000000000007 /* AIChat */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE7A120000000000000001 /* AIChatProvider.swift */,
+				C0DE7A120000000000000003 /* AIChatManager.swift */,
+				C0DE7A120000000000000005 /* AIChatView.swift */,
+			);
+			path = AIChat;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -921,6 +938,9 @@
 			files = (
 				C0DE7A110000000000000002 /* TranslatorManager.swift in Sources */,
 				C0DE7A110000000000000004 /* TranslatorView.swift in Sources */,
+				C0DE7A120000000000000002 /* AIChatProvider.swift in Sources */,
+				C0DE7A120000000000000004 /* AIChatManager.swift in Sources */,
+				C0DE7A120000000000000006 /* AIChatView.swift in Sources */,
 				115C12EC2ED3D003009754CA /* OpenNotchHUD.swift in Sources */,
 				14C08BB92C8DE4B1000F8AA0 /* BoringCalendar.swift in Sources */,
 				5955950D2E900ED800C66711 /* ApplicationRelauncher.swift in Sources */,

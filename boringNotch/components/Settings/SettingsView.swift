@@ -54,6 +54,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Translator") {
                     Label("Translator", systemImage: "character.bubble")
                 }
+                NavigationLink(value: "Ask AI") {
+                    Label("Ask AI", systemImage: "sparkles")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -90,6 +93,8 @@ struct SettingsView: View {
                     Shelf()
                 case "Translator":
                     TranslatorSettings()
+                case "Ask AI":
+                    AIChatSettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":
@@ -1749,6 +1754,11 @@ struct Shortcuts: View {
                 KeyboardShortcuts.Recorder("Translate Selection:", name: .translateSelection)
             } header: {
                 Text("Translator")
+            }
+            Section {
+                KeyboardShortcuts.Recorder("Open Ask AI:", name: .openAIChat)
+            } header: {
+                Text("Ask AI")
             }
         }
         .accentColor(.effectiveAccent)
