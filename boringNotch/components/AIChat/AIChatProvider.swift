@@ -57,7 +57,7 @@ struct AnthropicProvider: AIChatProvider {
 
                     var body: [String: Any] = [
                         "model": Self.model,
-                        "max_tokens": 1024,
+                        "max_tokens": 2048,
                         "stream": true,
                         "system": system,
                         "output_config": ["effort": "low"],
@@ -84,6 +84,8 @@ struct AnthropicProvider: AIChatProvider {
                         throw Self.map(status: status, body: data)
                     }
 
+                    var hadTextBlock = false
+                    var needsSeparator = false
                     for try await line in bytes.lines {
                         guard line.hasPrefix("data:") else { continue }
                         let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
@@ -93,6 +95,7 @@ struct AnthropicProvider: AIChatProvider {
                         switch type {
                         case "content_block_start":
                             let blockType = (json["content_block"] as? [String: Any])?["type"] as? String
+                            if blockType == "text", hadTextBlock { needsSeparator = true }
                             if blockType == "server_tool_use" {
                                 continuation.yield(.searching(true))
                             } else if blockType == "web_search_tool_result" {
@@ -102,6 +105,11 @@ struct AnthropicProvider: AIChatProvider {
                             if let delta = json["delta"] as? [String: Any],
                                delta["type"] as? String == "text_delta",
                                let text = delta["text"] as? String {
+                                hadTextBlock = true
+                                if needsSeparator {
+                                    needsSeparator = false
+                                    continuation.yield(.textDelta("\n\n"))
+                                }
                                 continuation.yield(.textDelta(text))
                             }
                         case "message_delta":
@@ -109,7 +117,7 @@ struct AnthropicProvider: AIChatProvider {
                             continuation.yield(.done(stopReason: reason))
                         case "error":
                             let message = (json["error"] as? [String: Any])?["message"] as? String ?? "Unknown error"
-                            throw AIChatError.http(0, message)
+                            throw AIChatError.network(message)
                         default:
                             break
                         }

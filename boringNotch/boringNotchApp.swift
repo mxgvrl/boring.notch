@@ -441,12 +441,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         KeyboardShortcuts.onKeyUp(for: .openAIChat) { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self = self, Defaults[.showAIChatTab] else { return }
-                let (viewModel, _) = self.notchUnderMouse()
+                let (viewModel, notchWindow) = self.notchUnderMouse()
                 self.closeNotchTask?.cancel()
                 self.coordinator.currentView = .aiChat
                 viewModel.open()
+                // canBecomeKey is true now that the tab is aiChat; typing goes to the notch, not the frontmost app.
+                notchWindow?.makeKey()
                 // The focused field holds the notch open via keepsNotchOpen.
-                AIChatManager.shared.focusRequest += 1
+                AIChatManager.shared.pendingFocus = true
             }
         }
 

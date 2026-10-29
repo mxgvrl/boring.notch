@@ -111,10 +111,10 @@ mediaremote-adapter/            готовый MediaRemoteAdapter.framework (б�
 
 ### Навигация по вкладкам
 
-1. `enums/generic.swift` → `enum NotchViews { case home, shelf, translator }` — какие вкладки существуют.
+1. `enums/generic.swift` → `enum NotchViews { case home, shelf, translator, aiChat }` — какие вкладки существуют.
 2. `components/Tabs/TabSelectionView.swift` → `let tabs = [TabModel(label:icon:view:)]` — кнопки в шапке (иконка — SF Symbol); `visibleTabs` прячет выключенные в настройках. Клик ставит `BoringViewCoordinator.shared.currentView`.
-3. `ContentView.swift` (~стр. 345) → `switch coordinator.currentView { case .home: NotchHomeView(...); case .shelf: ShelfView(); case .translator: TranslatorView() }` — какой view рисуется в открытом вырезе.
-4. `components/Notch/BoringHeader.swift` — переключатель вкладок показывается, если доступен Shelf (`Defaults[.boringShelf]` и shelf не пуст или `coordinator.alwaysShowTabs`) или включён переводчик (`Defaults[.showTranslatorTab]`).
+3. `ContentView.swift` (~стр. 345) → `switch coordinator.currentView { case .home: NotchHomeView(...); case .shelf: ShelfView(); case .translator: TranslatorView(); case .aiChat: AIChatView() }` — какой view рисуется в открытом вырезе.
+4. `components/Notch/BoringHeader.swift` — переключатель вкладок показывается, если доступен Shelf (`Defaults[.boringShelf]` и shelf не пуст или `coordinator.alwaysShowTabs`) или включён переводчик (`Defaults[.showTranslatorTab]`) или Ask AI (`Defaults[.showAIChatTab]`).
 
 Добавить вкладку = новый case в `NotchViews` + элемент в `tabs` (и в `visibleTabs`) + ветка в `switch` в `ContentView` (Swift заставит обработать case во всех `switch`).
 
@@ -124,9 +124,20 @@ mediaremote-adapter/            готовый MediaRemoteAdapter.framework (б�
 - `components/Translator/TranslatorView.swift` — UI вкладки (`LanguageMenu` источника/цели, кнопка ⇄) и `TranslatorSettings` (раздел настроек «Translator», включая список Starred languages).
 - Языки: `Defaults[.translatorSource]` / `[.translatorTarget]` (nil = авто: источник определяет DeepL, цель «любой → RU, RU → EN»), `[.translatorStarredLanguages]` — коды целей (`EN-US`, не `EN`); для меню источника сравниваются по базовому коду.
 - Ключ DeepL — `Defaults[.deeplAPIKey]` (plist в контейнере песочницы; не Keychain, т.к. ad-hoc подпись меняется при каждой сборке).
-- Ввод с клавиатуры: окно выреза (`BoringNotchSkyLightWindow.canBecomeKey`) может стать key только на вкладке translator. Пока поле в фокусе или открыто меню языков (`TranslatorManager.keepsNotchOpen`), hover-out не закрывает вырез. При уходе с вкладки фокус возвращается через `orderOut` + `orderFrontRegardless`.
+- Ввод с клавиатуры: окно выреза (`BoringNotchSkyLightWindow.canBecomeKey`) может стать key только на вкладках translator и aiChat. Пока поле в фокусе или открыто меню языков (`TranslatorManager.keepsNotchOpen`), hover-out не закрывает вырез. При уходе с вкладки фокус возвращается через `orderOut` + `orderFrontRegardless`.
 - Хоткей `.translateSelection` (⌃⌥T) — обработчик в `boringNotchApp.swift`, нажатие ⌘C — `postCopyShortcut` в `BoringNotchXPCHelper` (протокол продублирован в `BoringNotchXPCHelper/` и `boringNotch/XPCHelperClient/` — менять оба).
 - Нужен доступ Accessibility. После каждой ad-hoc пересборки macOS может перестать его признавать: удалить Boring Notch из списка в System Settings → Privacy & Security → Accessibility и выдать заново.
+
+### Вкладка Ask AI (кастомная)
+
+- `components/AIChat/AIChatProvider.swift` — `AIChatMessage`, `AIChatEvent`, `AIChatError`, протокол `AIChatProvider` и `AnthropicProvider` (модель `claude-haiku-5-5`, SSE-стрим, без temperature/top_p/top_k и без assistant prefill; рендерится только `text_delta`, `thinking`-блоки игнорируются; web search tool `web_search_20250305`, max_uses 2, включается `Defaults[.aiChatWebSearch]`).
+- `components/AIChat/AIChatManager.swift` — состояние чата, `keepsNotchOpen` (фокус поля, меню или стрим — стрим только пока активна вкладка Ask AI), `AIChatStore` (история).
+- `components/AIChat/AIChatView.swift` — UI вкладки и `AIChatSettings` (раздел «Ask AI»).
+- Ключи: `Defaults[.showAIChatTab]` (по умолчанию true), `[.anthropicAPIKey]` (plist, не Keychain, как у DeepL), `[.aiChatWebSearch]`.
+- Хоткей `.openAIChat` — без значения по умолчанию, задаётся в настройках; открывает вырез на вкладке Ask AI делает окно key и фокусирует поле через одноразовый `pendingFocus` (обработчик в `boringNotchApp.swift`).
+- История: `Application Support/AIChat/YYYY-MM-DD-<uuid>.json`, хранится только текст (без thinking/tool-блоков), сохраняется после каждого ответа, файлы старше 30 дней удаляются при первом создании `AIChatManager.shared` (открытие вкладки / первое использование) и при каждом сохранении; нечитаемые файлы — по дате модификации. В API уходят только текстовые реплики user/assistant. `pause_turn` показывается как «(stopped early)», `max_tokens` — «(cut off)» (лимит 2048), `refusal` — фиксированной фразой.
+
+- Смена чата (New chat / History) синхронно завершает текущий стрим (частичный ответ сохраняется в старый чат); события устаревшего стрима отбрасываются по `turnID`.
 
 ### Как устроена одна вкладка
 

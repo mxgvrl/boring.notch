@@ -31,8 +31,8 @@ struct AIChatView: View {
         .onChange(of: inputFocused) { _, focused in
             manager.isInputFocused = focused
         }
-        .onChange(of: manager.focusRequest) { _, _ in
-            inputFocused = true
+        .onChange(of: manager.pendingFocus) { _, _ in
+            consumePendingFocus()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { note in
             guard let window, note.object as? NSWindow === window else { return }
@@ -52,7 +52,7 @@ struct AIChatView: View {
         }
         .onAppear {
             // Opened via hotkey before the view existed: the request already fired.
-            if manager.focusRequest > 0 { inputFocused = true }
+            consumePendingFocus()
         }
         .onDisappear {
             manager.isInputFocused = false
@@ -60,6 +60,12 @@ struct AIChatView: View {
             menuDepth = 0
             releaseKeyFocus()
         }
+    }
+
+    private func consumePendingFocus() {
+        guard manager.pendingFocus else { return }
+        manager.pendingFocus = false
+        inputFocused = true
     }
 
     private var topRow: some View {

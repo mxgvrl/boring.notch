@@ -27,15 +27,18 @@ final class AIChatManager: ObservableObject {
     @Published private(set) var error: AIChatError?
     @Published var isInputFocused = false
     @Published var isMenuOpen = false
-    @Published var focusRequest = 0
+    @Published var pendingFocus = false
     @Published private(set) var recentChats: [AIChatSummary] = []
 
-    var keepsNotchOpen: Bool { isInputFocused || isMenuOpen || isStreaming }
+    var keepsNotchOpen: Bool {
+        isInputFocused || isMenuOpen || (isStreaming && BoringViewCoordinator.shared.currentView == .aiChat)
+    }
 
     private let provider: AIChatProvider = AnthropicProvider()
     private var chatID = UUID()
     private var createdAt = Date()
     private var streamTask: Task<Void, Never>?
+    private var turnID = 0
 
     private init() {
         AIChatStore.purgeOld()
@@ -61,12 +64,15 @@ final class AIChatManager: ObservableObject {
         messages.append(AIChatMessage(role: "user", text: text))
         isStreaming = true
         let history = messages
+        turnID += 1
+        let myTurn = turnID
 
         streamTask = Task { [weak self] in
             guard let self else { return }
             var stopReason: String?
             do {
                 for try await event in self.provider.stream(system: self.systemPrompt, messages: history) {
+                    guard self.turnID == myTurn else { return }
                     switch event {
                     case .textDelta(let delta): self.streamingText += delta
                     case .searching(let on): self.isSearching = on
@@ -74,10 +80,13 @@ final class AIChatManager: ObservableObject {
                     }
                 }
             } catch let err as AIChatError {
+                guard self.turnID == myTurn else { return }
                 self.error = err
             } catch {
+                guard self.turnID == myTurn else { return }
                 self.error = .network(error.localizedDescription)
             }
+            guard self.turnID == myTurn else { return }
             self.finishTurn(stopReason: stopReason)
         }
     }
@@ -88,6 +97,8 @@ final class AIChatManager: ObservableObject {
             text = "Claude declined to answer this."
         } else if stopReason == "pause_turn" {
             text += " (stopped early)"
+        } else if stopReason == "max_tokens" {
+            text += " (cut off)"
         }
         if !text.isEmpty {
             messages.append(AIChatMessage(role: "assistant", text: text))
@@ -103,8 +114,18 @@ final class AIChatManager: ObservableObject {
         streamTask?.cancel()
     }
 
+    /// Synchronously ends an in-flight turn (keeping the partial answer, saving the old chat)
+    /// and invalidates its task so late events can't touch whatever chat is current next.
+    private func abandonTurn() {
+        guard isStreaming else { return }
+        let task = streamTask
+        finishTurn(stopReason: nil)
+        turnID += 1
+        task?.cancel()
+    }
+
     func newChat() {
-        stop()
+        abandonTurn()
         messages = []
         streamingText = ""
         error = nil
@@ -115,7 +136,7 @@ final class AIChatManager: ObservableObject {
 
     func load(_ summary: AIChatSummary) {
         guard let chat = AIChatStore.read(summary.url) else { return }
-        stop()
+        abandonTurn()
         messages = chat.messages
         chatID = chat.id
         createdAt = chat.createdAt
@@ -195,9 +216,15 @@ enum AIChatStore {
     static func purgeOld() {
         let cutoff = Date().addingTimeInterval(-30 * 24 * 3600)
         for url in files() {
-            if let chat = read(url), chat.updatedAt < cutoff {
-                try? FileManager.default.removeItem(at: url)
+            let expired: Bool
+            if let chat = read(url) {
+                expired = chat.updatedAt < cutoff
+            } else {
+                // Undecodable file: fall back to its modification date.
+                let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+                expired = (modified ?? .distantFuture) < cutoff
             }
+            if expired { try? FileManager.default.removeItem(at: url) }
         }
     }
 
