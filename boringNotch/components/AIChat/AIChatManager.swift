@@ -229,8 +229,9 @@ enum AIChatStore {
     }
 
     static func listRecent() -> [AIChatSummary] {
-        files().compactMap { url -> AIChatSummary? in
-            guard let chat = read(url) else { return nil }
+        let cutoff = Date().addingTimeInterval(-30 * 24 * 3600)
+        return files().compactMap { url -> AIChatSummary? in
+            guard let chat = read(url), chat.updatedAt >= cutoff else { return nil }
             let first = chat.messages.first { $0.role == "user" }?.text ?? "Chat"
             let title = first.count > 40 ? String(first.prefix(40)) + "…" : first
             let date = chat.updatedAt.formatted(date: .abbreviated, time: .omitted)

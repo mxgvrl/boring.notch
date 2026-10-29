@@ -86,6 +86,7 @@ struct AnthropicProvider: AIChatProvider {
 
                     var hadTextBlock = false
                     var needsSeparator = false
+                    var sawToolSinceText = false
                     for try await line in bytes.lines {
                         guard line.hasPrefix("data:") else { continue }
                         let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
@@ -95,7 +96,10 @@ struct AnthropicProvider: AIChatProvider {
                         switch type {
                         case "content_block_start":
                             let blockType = (json["content_block"] as? [String: Any])?["type"] as? String
-                            if blockType == "text", hadTextBlock { needsSeparator = true }
+                            if blockType == "text", hadTextBlock, sawToolSinceText { needsSeparator = true }
+                            if blockType == "server_tool_use" || blockType == "web_search_tool_result" {
+                                sawToolSinceText = true
+                            }
                             if blockType == "server_tool_use" {
                                 continuation.yield(.searching(true))
                             } else if blockType == "web_search_tool_result" {
@@ -106,6 +110,7 @@ struct AnthropicProvider: AIChatProvider {
                                delta["type"] as? String == "text_delta",
                                let text = delta["text"] as? String {
                                 hadTextBlock = true
+                                sawToolSinceText = false
                                 if needsSeparator {
                                     needsSeparator = false
                                     continuation.yield(.textDelta("\n\n"))

@@ -40,6 +40,9 @@ struct AIChatView: View {
             manager.isInputFocused = false
             closeIfPointerLeft()
         }
+        .onChange(of: manager.isStreaming) { _, streaming in
+            if !streaming { closeIfPointerLeft() }
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)) { _ in
             menuDepth += 1
             manager.isMenuOpen = true
