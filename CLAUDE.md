@@ -21,6 +21,69 @@ CONFIGURATION=Debug scripts/dev-install.sh # Debug-сборка
 - Проверить, что код хотя бы компилируется, без установки:
   `xcodebuild -project boringNotch.xcodeproj -scheme boringNotch -configuration Debug -derivedDataPath build CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= ENABLE_HARDENED_RUNTIME=NO build`
 
+## Working a task — roles, models, order
+
+The four agents live in `.claude/agents/`. The session you are talking to is
+the orchestrator: it
+reads the task, delegates, and keeps its own context small by reading only
+what the subagents' reports do not cover.
+
+### Roles and models
+
+| Agent | Model / effort | Does | Never |
+|---|---|---|---|
+| `planner` | Fable, medium, read-only | turns the task into a numbered plan with files, steps, tests, build commands | writes code |
+| `coder` | Sonnet, medium | implements the plan step by step, builds after each step, commits when green | redesigns the plan, pushes |
+| `ops` | Haiku, low | runs builds, tests, launches the app, collects logs; quotes results | edits source, interprets failures |
+| `reviewer` | Opus, high | judges the diff against the task on its own, without the plan | fixes anything |
+
+Why this split: the expensive models sit where decisions are made (plan,
+verdict), the cheap ones where the volume is (code, shell output). Measured on
+a sibling project: Opus and Fable are about 85 % of a task's cost, coder and
+ops the rest, so the planner is the first thing to skip on a small task.
+
+### Order
+
+```
+planner → coder → ops → reviewer
+   ops red     → coder (at most two rounds), then ops again
+   reviewer FIX → coder → ops → reviewer, once; a second FIX stops the task
+   reviewer SHIP → done
+```
+
+**Small-task shortcut.** If the change touches at most three files and adds no
+new type or user-visible behaviour, skip the planner: hand the task straight to
+`coder` with the files named. `ops` and `reviewer` still run. When in doubt,
+plan.
+
+**Hand-offs are short reports, not transcripts.** Each agent starts with an
+empty context and returns under 60 lines (plan), 30 (coder), 40 (reviewer);
+the orchestrator passes the plan to the coder verbatim and the reviewer gets
+the task text only. Do not paste file contents between agents; name the files.
+
+### Verification is the project's, not the agent's
+
+Build, test and run commands live in this `CLAUDE.md` (fill in the block
+below); every agent copies them from here. A task is not done until `ops` has
+run them green on the final commit.
+
+```bash
+# Compile check, no install (ad-hoc signing flags are required, see "Сборка и установка")
+xcodebuild -project boringNotch.xcodeproj -scheme boringNotch -configuration Debug -derivedDataPath build CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= ENABLE_HARDENED_RUNTIME=NO build
+# Release build → replace /Applications/Boring Notch.app → relaunch; green = ends with "Running (pid …)"
+scripts/dev-install.sh
+```
+
+There is no test target. The manual check is the user exercising the change in
+the installed app; agents cannot click, type or take screenshots, so the report
+says exactly what the user should try.
+
+### If the change alters how something works, update this file
+
+A behaviour change (a new setting, a changed default, a different launch path,
+a removed feature) is not finished until the matching lines in `CLAUDE.md` say
+the new behaviour, in the same commit. Record the decision, not the diff.
+
 ## Структура
 
 ```
