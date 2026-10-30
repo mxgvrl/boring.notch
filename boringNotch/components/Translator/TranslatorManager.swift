@@ -216,6 +216,7 @@ final class TranslatorManager: ObservableObject {
         guard !output.isEmpty else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(output, forType: .string)
+        ClipboardWatcher.shared.markOwnWrite()
     }
 
     // MARK: - Selection capture
@@ -234,6 +235,11 @@ final class TranslatorManager: ObservableObject {
         }
 
         let pasteboard = NSPasteboard.general
+        ClipboardWatcher.shared.isSuspended = true
+        defer {
+            ClipboardWatcher.shared.markOwnWrite()
+            ClipboardWatcher.shared.isSuspended = false
+        }
         let saved = Self.snapshot(pasteboard)
         let changeCount = pasteboard.changeCount
 

@@ -23,6 +23,7 @@ enum ShelfActionService {
         case .text(let string):
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(string, forType: .string)
+            ClipboardWatcher.shared.markOwnWrite()
         }
     }
 
@@ -38,6 +39,7 @@ enum ShelfActionService {
         handleBookmarkedFile(bookmark) { url in
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(url.path, forType: .string)
+            ClipboardWatcher.shared.markOwnWrite()
         }
     }
 

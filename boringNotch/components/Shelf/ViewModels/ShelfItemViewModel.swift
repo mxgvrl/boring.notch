@@ -505,6 +505,7 @@ final class ShelfItemViewModel: ObservableObject {
                 if !paths.isEmpty {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(paths.joined(separator: "\n"), forType: .string)
+                    ClipboardWatcher.shared.markOwnWrite()
                 }
 
             case "Copy":
@@ -532,10 +533,12 @@ final class ShelfItemViewModel: ObservableObject {
                         
                         // Write to pasteboard
                         pb.writeObjects(fileURLs as [NSURL])
+                        ClipboardWatcher.shared.markOwnWrite()
                     } else {
                         let strings = selected.map { $0.displayName }
                         if !strings.isEmpty {
                             pb.setString(strings.joined(separator: "\n"), forType: .string)
+                            ClipboardWatcher.shared.markOwnWrite()
                         }
                     }
                 }

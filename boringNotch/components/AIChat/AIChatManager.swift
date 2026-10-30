@@ -159,6 +159,7 @@ final class AIChatManager: ObservableObject {
         let text = "Continuing a quick chat from my notch widget:\n\n\(transcript)\n\nLet's continue from here."
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
+        ClipboardWatcher.shared.markOwnWrite()
         return true
     }
 
