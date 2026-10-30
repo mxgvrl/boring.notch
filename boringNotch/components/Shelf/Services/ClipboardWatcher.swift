@@ -7,6 +7,7 @@
 
 import AppKit
 import Combine
+import CryptoKit
 import Defaults
 import Foundation
 
@@ -21,6 +22,7 @@ final class ClipboardWatcher {
     private var lastChangeCount = NSPasteboard.general.changeCount
     private var cancellables = Set<AnyCancellable>()
     private var observing = false
+    private var imageHashes: [String: ShelfItem.ID] = [:]
 
     private static let ignoredTypes: Set<String> = [
         "org.nspasteboard.ConcealedType",
@@ -65,9 +67,15 @@ final class ClipboardWatcher {
 
     /// Call right after the app writes to the pasteboard so the write is not imported.
     nonisolated func markOwnWrite() {
-        let count = NSPasteboard.general.changeCount
-        Task { @MainActor in self.lastChangeCount = count }
+        if Thread.isMainThread {
+            MainActor.assumeIsolated { self.lastChangeCount = NSPasteboard.general.changeCount }
+        } else {
+            DispatchQueue.main.async { self.lastChangeCount = NSPasteboard.general.changeCount }
+        }
     }
+
+    /// Runs one synchronous poll (ignores the timer).
+    func tickNow() { tick() }
 
     private func tick() {
         guard !isSuspended else { return }
@@ -90,24 +98,34 @@ final class ClipboardWatcher {
             return
         }
 
-        // 2. Images
-        let imageData = pb.data(forType: .png) ?? pb.data(forType: .tiff)
-        if let imageData {
-            Task { @MainActor in
-                var png = imageData
-                if pb.data(forType: .png) == nil,
-                   let rep = NSBitmapImageRep(data: imageData),
-                   let converted = rep.representation(using: .png, properties: [:]) {
-                    png = converted
+        // 2. Images (rich-text sources such as Office attach a rendered picture: text wins there)
+        let hasRichText = types.contains(NSPasteboard.PasteboardType.rtf.rawValue)
+            || types.contains(NSPasteboard.PasteboardType.rtfd.rawValue)
+        if !hasRichText {
+            let pngData = pb.data(forType: .png)
+            let tiffData = pngData == nil ? pb.data(forType: .tiff) : nil
+            if pngData != nil || tiffData != nil {
+                Task { @MainActor in
+                    var png: Data
+                    if let pngData {
+                        png = pngData
+                    } else if let tiffData, let rep = NSBitmapImageRep(data: tiffData),
+                              let converted = rep.representation(using: .png, properties: [:]) {
+                        png = converted
+                    } else { return }
+                    let hash = SHA256.hash(data: png).map { String(format: "%02x", $0) }.joined()
+                    if let id = imageHashes[hash], ShelfStateViewModel.shared.moveToFront(id: id) { return }
+                    let f = DateFormatter()
+                    f.dateFormat = "yyyy-MM-dd HH.mm.ss"
+                    let name = "Clipboard \(f.string(from: Date())).png"
+                    guard let url = await TemporaryFileStorageService.shared.createTempFile(for: .data(png, suggestedName: name)),
+                          let bookmark = try? Bookmark(url: url) else { return }
+                    let item = ShelfItem(kind: .file(bookmark: bookmark.data), isTemporary: true, fromClipboard: true)
+                    imageHashes[hash] = item.id
+                    ShelfStateViewModel.shared.add([item])
                 }
-                let f = DateFormatter()
-                f.dateFormat = "yyyy-MM-dd HH.mm.ss"
-                let name = "Clipboard \(f.string(from: Date())).png"
-                guard let url = await TemporaryFileStorageService.shared.createTempFile(for: .data(png, suggestedName: name)),
-                      let bookmark = try? Bookmark(url: url) else { return }
-                ShelfStateViewModel.shared.add([ShelfItem(kind: .file(bookmark: bookmark.data), isTemporary: true, fromClipboard: true)])
+                return
             }
-            return
         }
 
         // 3. Text / links

@@ -235,6 +235,7 @@ final class TranslatorManager: ObservableObject {
         }
 
         let pasteboard = NSPasteboard.general
+        ClipboardWatcher.shared.tickNow()
         ClipboardWatcher.shared.isSuspended = true
         defer {
             ClipboardWatcher.shared.markOwnWrite()

@@ -37,7 +37,8 @@ final class ShelfStateViewModel: ObservableObject {
             let key = it.identityKey
             if let idx = merged.firstIndex(where: { $0.identityKey == key }) {
                 if it.isTemporary && it.id != merged[idx].id { it.cleanupStoredData() }
-                let existing = merged.remove(at: idx)
+                var existing = merged.remove(at: idx)
+                if !it.fromClipboard { existing.fromClipboard = false }
                 merged.insert(existing, at: 0)
             } else {
                 merged.insert(it, at: 0)
@@ -45,6 +46,16 @@ final class ShelfStateViewModel: ObservableObject {
         }
         items = merged
         enforceClipboardLimit()
+    }
+
+    /// Moves an existing item to the front; returns false if it no longer exists.
+    @discardableResult
+    func moveToFront(id: ShelfItem.ID) -> Bool {
+        guard let idx = items.firstIndex(where: { $0.id == id }) else { return false }
+        var result = items
+        result.insert(result.remove(at: idx), at: 0)
+        items = result
+        return true
     }
 
     func enforceClipboardLimit() {
