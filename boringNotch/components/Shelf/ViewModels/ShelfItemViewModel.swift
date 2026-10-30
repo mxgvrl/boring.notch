@@ -367,6 +367,8 @@ final class ShelfItemViewModel: ObservableObject {
             menu.addItem(copyPathItem)
         }
 
+        if selectedItems.contains(where: { $0.fromClipboard }) { addMenuItem(title: "Keep on Shelf") }
+
         menu.addItem(NSMenuItem.separator())
         addMenuItem(title: "Remove")
 
@@ -542,6 +544,10 @@ final class ShelfItemViewModel: ObservableObject {
                         }
                     }
                 }
+
+            case "Keep on Shelf":
+                let selected = ShelfSelectionModel.shared.selectedItems(in: ShelfStateViewModel.shared.items)
+                ShelfStateViewModel.shared.keepOnShelf(selected)
 
             case "Remove":
                 let selected = ShelfSelectionModel.shared.selectedItems(in: ShelfStateViewModel.shared.items)
