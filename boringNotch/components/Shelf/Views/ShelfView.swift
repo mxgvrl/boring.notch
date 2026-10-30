@@ -6,11 +6,13 @@
 //
 
 import SwiftUI
+import Defaults
 import AppKit
 
 struct ShelfView: View {
     @EnvironmentObject var vm: BoringViewModel
     @StateObject var tvm = ShelfStateViewModel.shared
+    @Default(.shelfClipboardHistory) private var clipboardHistory
     @StateObject var selection = ShelfSelectionModel.shared
     @StateObject private var quickLookService = QuickLookService()
     private let spacing: CGFloat = 8
@@ -87,7 +89,7 @@ struct ShelfView: View {
                         .foregroundStyle(.white, .gray)
                         .imageScale(.large)
                     
-                    Text("Drop files here")
+                    Text(clipboardHistory ? "Drop files or copy something" : "Drop files here")
                         .foregroundStyle(.gray)
                         .font(.system(.title3, design: .rounded))
                         .fontWeight(.medium)

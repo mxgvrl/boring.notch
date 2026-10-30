@@ -13,10 +13,12 @@ struct BoringHeader: View {
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @StateObject var tvm = ShelfStateViewModel.shared
+    @Default(.boringShelf) private var boringShelf
+    @Default(.shelfClipboardHistory) private var shelfClipboardHistory
     var body: some View {
         HStack(spacing: 0) {
             HStack {
-                if ((!tvm.isEmpty || coordinator.alwaysShowTabs) && Defaults[.boringShelf]) || Defaults[.showTranslatorTab] || Defaults[.showAIChatTab] {
+                if ((!tvm.isEmpty || coordinator.alwaysShowTabs) && boringShelf) || (boringShelf && shelfClipboardHistory) || Defaults[.showTranslatorTab] || Defaults[.showAIChatTab] {
                     TabSelectionView()
                 } else if vm.notchState == .open {
                     EmptyView()

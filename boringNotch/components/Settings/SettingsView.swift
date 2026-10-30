@@ -923,6 +923,7 @@ struct Shelf: View {
     
     @Default(.shelfTapToOpen) var shelfTapToOpen: Bool
     @Default(.quickShareProvider) var quickShareProvider
+    @Default(.clipboardHistoryLimit) var clipboardHistoryLimit
     @Default(.expandedDragDetection) var expandedDragDetection: Bool
     @StateObject private var quickShareService = QuickShareService.shared
 
@@ -963,6 +964,21 @@ struct Shelf: View {
                 HStack {
                     Text("General")
                 }
+            }
+
+            Section {
+                Defaults.Toggle(key: .shelfClipboardHistory) {
+                    Text("Keep clipboard history on the shelf")
+                }
+                Stepper("Keep last \(clipboardHistoryLimit) copied items", value: $clipboardHistoryLimit, in: 5...100, step: 5)
+                    .onChange(of: clipboardHistoryLimit) { _, _ in
+                        ShelfStateViewModel.shared.enforceClipboardLimit()
+                    }
+                Button("Clear clipboard history") {
+                    ShelfStateViewModel.shared.clearClipboardItems()
+                }
+            } header: {
+                Text("Clipboard history")
             }
             
             Section {
