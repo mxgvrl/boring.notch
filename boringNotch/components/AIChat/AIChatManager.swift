@@ -41,8 +41,7 @@ final class AIChatManager: ObservableObject {
     private var turnID = 0
 
     private init() {
-        AIChatStore.purgeOld()
-        recentChats = AIChatStore.listRecent()
+        refreshHistory()
     }
 
     private var systemPrompt: String {
@@ -96,9 +95,9 @@ final class AIChatManager: ObservableObject {
         if stopReason == "refusal" {
             text = "Claude declined to answer this."
         } else if stopReason == "pause_turn" {
-            text += " (stopped early)"
+            text += (text.isEmpty ? "" : " ") + "(stopped early)"
         } else if stopReason == "max_tokens" {
-            text += " (cut off)"
+            text += (text.isEmpty ? "" : " ") + "(cut off)"
         }
         if !text.isEmpty {
             messages.append(AIChatMessage(role: "assistant", text: text))
@@ -135,8 +134,15 @@ final class AIChatManager: ObservableObject {
     }
 
     func load(_ summary: AIChatSummary) {
-        guard let chat = AIChatStore.read(summary.url) else { return }
         abandonTurn()
+        // Selected chat is the live one: the in-memory messages are the latest.
+        if summary.id == chatID { return }
+        guard let chat = AIChatStore.read(summary.url) else { return }
+        if chat.updatedAt < AIChatStore.cutoff {
+            try? FileManager.default.removeItem(at: summary.url)
+            refreshHistory()
+            return
+        }
         messages = chat.messages
         chatID = chat.id
         createdAt = chat.createdAt
@@ -156,11 +162,16 @@ final class AIChatManager: ObservableObject {
         return true
     }
 
+    /// Drops expired chats and reloads the History list (cheap directory listing).
+    func refreshHistory() {
+        AIChatStore.purgeOld()
+        recentChats = AIChatStore.listRecent()
+    }
+
     private func save() {
         guard !messages.isEmpty else { return }
         AIChatStore.write(AIChatStore.Chat(id: chatID, createdAt: createdAt, updatedAt: Date(), messages: messages))
-        AIChatStore.purgeOld()
-        recentChats = AIChatStore.listRecent()
+        refreshHistory()
     }
 }
 
@@ -213,8 +224,10 @@ enum AIChatStore {
         return urls.filter { $0.pathExtension == "json" }
     }
 
+    static var cutoff: Date { Date().addingTimeInterval(-30 * 24 * 3600) }
+
     static func purgeOld() {
-        let cutoff = Date().addingTimeInterval(-30 * 24 * 3600)
+        let cutoff = cutoff
         for url in files() {
             let expired: Bool
             if let chat = read(url) {

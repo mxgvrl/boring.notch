@@ -46,6 +46,7 @@ struct AIChatView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)) { _ in
             menuDepth += 1
             manager.isMenuOpen = true
+            manager.refreshHistory()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSMenu.didEndTrackingNotification)) { _ in
             menuDepth = max(0, menuDepth - 1)
@@ -56,6 +57,7 @@ struct AIChatView: View {
         .onAppear {
             // Opened via hotkey before the view existed: the request already fired.
             consumePendingFocus()
+            manager.refreshHistory()
         }
         .onDisappear {
             manager.isInputFocused = false

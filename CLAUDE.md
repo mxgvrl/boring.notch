@@ -135,7 +135,7 @@ mediaremote-adapter/            готовый MediaRemoteAdapter.framework (б�
 - `components/AIChat/AIChatView.swift` — UI вкладки и `AIChatSettings` (раздел «Ask AI»).
 - Ключи: `Defaults[.showAIChatTab]` (по умолчанию true), `[.anthropicAPIKey]` (plist, не Keychain, как у DeepL), `[.aiChatWebSearch]`.
 - Хоткей `.openAIChat` — без значения по умолчанию, задаётся в настройках; открывает вырез на вкладке Ask AI делает окно key и фокусирует поле через одноразовый `pendingFocus` (обработчик в `boringNotchApp.swift`).
-- История: `Application Support/AIChat/YYYY-MM-DD-<uuid>.json`, хранится только текст (без thinking/tool-блоков), сохраняется после каждого ответа, файлы старше 30 дней удаляются при первом создании `AIChatManager.shared` (открытие вкладки / первое использование) и при каждом сохранении; нечитаемые файлы — по дате модификации. В API уходят только текстовые реплики user/assistant. `pause_turn` показывается как «(stopped early)», `max_tokens` — «(cut off)» (лимит 2048), `refusal` — фиксированной фразой.
+- История: `Application Support/AIChat/YYYY-MM-DD-<uuid>.json`, хранится только текст (без thinking/tool-блоков), сохраняется после каждого ответа, файлы старше 30 дней удаляются через `refreshHistory()` (появление вкладки, открытие меню History, каждое сохранение); `load()` не открывает чат старше 30 дней (удаляет файл); нечитаемые файлы — по дате модификации. В API уходят только текстовые реплики user/assistant. `pause_turn` показывается как «(stopped early)», `max_tokens` — «(cut off)» (лимит 2048), `refusal` — фиксированной фразой.
 
 - Смена чата (New chat / History) синхронно завершает текущий стрим (частичный ответ сохраняется в старый чат); события устаревшего стрима отбрасываются по `turnID`.
 
