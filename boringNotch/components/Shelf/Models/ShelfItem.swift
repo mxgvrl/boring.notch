@@ -53,10 +53,22 @@ struct ShelfItem: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     var kind: ShelfItemKind
     var isTemporary: Bool
-    init(id: UUID = UUID(), kind: ShelfItemKind, isTemporary: Bool = false) {
+    var fromClipboard: Bool = false
+    init(id: UUID = UUID(), kind: ShelfItemKind, isTemporary: Bool = false, fromClipboard: Bool = false) {
         self.id = id
         self.kind = kind
         self.isTemporary = isTemporary
+        self.fromClipboard = fromClipboard
+    }
+
+    enum CodingKeys: String, CodingKey { case id, kind, isTemporary, fromClipboard }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        kind = try c.decode(ShelfItemKind.self, forKey: .kind)
+        isTemporary = try c.decode(Bool.self, forKey: .isTemporary)
+        fromClipboard = try c.decodeIfPresent(Bool.self, forKey: .fromClipboard) ?? false
     }
     
     var displayName: String {

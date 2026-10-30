@@ -166,6 +166,8 @@ extension Defaults.Keys {
     static let boringShelf = Key<Bool>("boringShelf", default: true)
     static let openShelfByDefault = Key<Bool>("openShelfByDefault", default: true)
     static let shelfTapToOpen = Key<Bool>("shelfTapToOpen", default: true)
+    static let shelfClipboardHistory = Key<Bool>("shelfClipboardHistory", default: true)
+    static let clipboardHistoryLimit = Key<Int>("clipboardHistoryLimit", default: 20)
     static let quickShareProvider = Key<String>("quickShareProvider", default: QuickShareProvider.defaultProvider.id)
     static let copyOnDrag = Key<Bool>("copyOnDrag", default: false)
     static let autoRemoveShelfItems = Key<Bool>("autoRemoveShelfItems", default: false)

@@ -280,6 +280,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        ClipboardWatcher.shared.start()
 
         NotificationCenter.default.addObserver(
             self,

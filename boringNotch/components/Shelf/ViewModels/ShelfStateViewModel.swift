@@ -6,6 +6,7 @@
 
 import Foundation
 import AppKit
+import Defaults
 
 @MainActor
 final class ShelfStateViewModel: ObservableObject {
@@ -31,17 +32,47 @@ final class ShelfStateViewModel: ObservableObject {
     func add(_ newItems: [ShelfItem]) {
         guard !newItems.isEmpty else { return }
         var merged = items
-        // Deduplicate by identityKey while preserving order (existing first)
-        var seen: Set<String> = Set(merged.map { $0.identityKey })
-        for it in newItems {
+        // New items go to the front; an existing duplicate moves to the front (keeping its own flags)
+        for it in newItems.reversed() {
             let key = it.identityKey
-            if !seen.contains(key) {
-                merged.append(it)
-                seen.insert(key)
+            if let idx = merged.firstIndex(where: { $0.identityKey == key }) {
+                if it.isTemporary && it.id != merged[idx].id { it.cleanupStoredData() }
+                let existing = merged.remove(at: idx)
+                merged.insert(existing, at: 0)
+            } else {
+                merged.insert(it, at: 0)
             }
         }
         items = merged
+        enforceClipboardLimit()
     }
+
+    func enforceClipboardLimit() {
+        let limit = Defaults[.clipboardHistoryLimit]
+        var result = items
+        var count = result.filter { $0.fromClipboard }.count
+        guard count > limit else { return }
+        while count > limit, let idx = result.lastIndex(where: { $0.fromClipboard }) {
+            result[idx].cleanupStoredData()
+            result.remove(at: idx)
+            count -= 1
+        }
+        items = result
+    }
+
+    func clearClipboardItems() {
+        for it in items where it.fromClipboard { it.cleanupStoredData() }
+        items.removeAll { $0.fromClipboard }
+    }
+
+    func keepOnShelf(_ toKeep: [ShelfItem]) {
+        let ids = Set(toKeep.map { $0.id })
+        var result = items
+        for i in result.indices where ids.contains(result[i].id) { result[i].fromClipboard = false }
+        items = result
+    }
+
+    var hasNonClipboardItems: Bool { items.contains { !$0.fromClipboard } }
 
     func remove(_ item: ShelfItem) {
         item.cleanupStoredData()
