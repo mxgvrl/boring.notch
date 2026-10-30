@@ -101,7 +101,10 @@ final class ClipboardWatcher {
         // 2. Images (rich-text sources such as Office attach a rendered picture: text wins there)
         let hasRichText = types.contains(NSPasteboard.PasteboardType.rtf.rawValue)
             || types.contains(NSPasteboard.PasteboardType.rtfd.rawValue)
-        if !hasRichText {
+        let realText = (pb.string(forType: .string) ?? "")
+            .replacingOccurrences(of: "\u{FFFC}", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !(hasRichText && !realText.isEmpty) {
             let pngData = pb.data(forType: .png)
             let tiffData = pngData == nil ? pb.data(forType: .tiff) : nil
             if pngData != nil || tiffData != nil {
@@ -130,7 +133,8 @@ final class ClipboardWatcher {
 
         // 3. Text / links
         guard let raw = pb.string(forType: .string) else { return }
-        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = raw.replacingOccurrences(of: "\u{FFFC}", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, text.count <= 100_000 else { return }
         if !text.contains(where: { $0.isWhitespace }),
            let url = URL(string: text),
