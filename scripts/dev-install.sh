@@ -4,7 +4,12 @@
 #   scripts/dev-install.sh            # Release build (default)
 #   CONFIGURATION=Debug scripts/dev-install.sh
 #
-# Signs ad-hoc ("-"), so no Apple Developer account is needed. Hardened runtime is
+# Signs with the self-signed "macbrow" certificate from the login keychain
+# (override the name with SIGN_IDENTITY=...). Its designated requirement is stable
+# across rebuilds, so TCC grants (Accessibility, camera, calendar) survive them.
+# If the certificate is missing it falls back to ad-hoc ("-"), whose requirement is
+# a cdhash that changes every build, so those grants are lost each time. See CLAUDE.md.
+# No Apple Developer account is needed either way. Hardened runtime is
 # turned off: with it, dyld's library validation refuses to load the embedded
 # ad-hoc-signed frameworks (MediaRemoteAdapter etc.) and the app dies at launch.
 # It only matters for notarized distribution builds.
@@ -23,14 +28,26 @@ LOG="$DERIVED_DATA/dev-install.log"
 
 mkdir -p "$DERIVED_DATA"
 
-echo "==> Building $CONFIGURATION (log: $LOG)"
+SIGN_IDENTITY="${SIGN_IDENTITY:-macbrow}"
+SIGN_ARGS=()
+IDENTITIES="$(security find-identity -v -p codesigning 2>/dev/null || true)"
+if grep -F "\"$SIGN_IDENTITY\"" <<<"$IDENTITIES" >/dev/null; then
+  USED_IDENTITY="$SIGN_IDENTITY"
+  SIGN_ARGS=(CODE_SIGN_IDENTITY="$SIGN_IDENTITY" OTHER_CODE_SIGN_FLAGS=--timestamp=none)
+else
+  USED_IDENTITY="- (ad-hoc)"
+  SIGN_ARGS=(CODE_SIGN_IDENTITY="-")
+  echo "!! Signing identity \"$SIGN_IDENTITY\" not found; signing ad-hoc. Accessibility etc. will need re-granting after each rebuild, see CLAUDE.md." >&2
+fi
+
+echo "==> Building $CONFIGURATION, signing: $USED_IDENTITY (log: $LOG)"
 if ! xcodebuild \
     -project boringNotch.xcodeproj \
     -scheme boringNotch \
     -configuration "$CONFIGURATION" \
     -destination "generic/platform=macOS" \
     -derivedDataPath "$DERIVED_DATA" \
-    CODE_SIGN_IDENTITY="-" \
+    "${SIGN_ARGS[@]}" \
     CODE_SIGN_STYLE=Manual \
     DEVELOPMENT_TEAM="" \
     ENABLE_HARDENED_RUNTIME=NO \
@@ -40,6 +57,7 @@ if ! xcodebuild \
   exit 1
 fi
 echo "    Build succeeded: $BUILT_APP"
+echo "    $(codesign -dr - "$BUILT_APP" 2>&1 | grep designated || echo 'designated requirement: unknown')"
 
 echo "==> Stopping running instance"
 if pgrep -x "$APP_NAME" >/dev/null; then
@@ -60,6 +78,15 @@ fi
 echo "==> Installing to $INSTALLED_APP"
 rm -rf "$INSTALLED_APP"
 ditto "$BUILT_APP" "$INSTALLED_APP"
+
+# xcodebuild registers every copy under build/ with LaunchServices. They share the bundle id,
+# so launching by id (login item, Spotlight, `open -b`) can start an ad-hoc build/ copy that
+# has none of the TCC grants. Keep only the installed app registered.
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+for copy in "$DERIVED_DATA"/Build/Products/*/"$APP_NAME.app"; do
+  [ -d "$copy" ] && "$LSREGISTER" -u "$copy" >/dev/null 2>&1 || true
+done
+"$LSREGISTER" -f "$INSTALLED_APP" >/dev/null 2>&1 || true
 
 echo "==> Launching"
 open "$INSTALLED_APP"
