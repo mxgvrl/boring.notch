@@ -604,7 +604,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.menu?.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
     }
 
-    /// The notch view model and window on the screen under the pointer (or the single notch).
     @MainActor
     private func cycleNotchTab(by step: Int) {
         let (viewModel, window) = notchUnderMouse()
@@ -636,6 +635,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// The notch view model and window on the screen under the pointer (or the single notch).
     private func notchUnderMouse() -> (BoringViewModel, NSWindow?) {
         guard Defaults[.showOnAllDisplays] else { return (vm, window) }
         let mouseLocation = NSEvent.mouseLocation
