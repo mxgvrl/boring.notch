@@ -1704,6 +1704,12 @@ struct Shortcuts: View {
                 KeyboardShortcuts.Recorder("Toggle Notch Open:", name: .toggleNotchOpen)
             }
             Section {
+                KeyboardShortcuts.Recorder("Next Tab:", name: .nextNotchTab)
+                KeyboardShortcuts.Recorder("Previous Tab:", name: .previousNotchTab)
+            } header: {
+                Text("Tabs")
+            }
+            Section {
                 KeyboardShortcuts.Recorder("Translate Selection:", name: .translateSelection)
             } header: {
                 Text("Translator")

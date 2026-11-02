@@ -15,6 +15,8 @@ extension KeyboardShortcuts.Name {
     static let increaseBacklight = Self("increaseBacklight", default: .init(.f2, modifiers: [.command]))
     static let toggleSneakPeek = Self("toggleSneakPeek", default: .init(.h, modifiers: [.command, .shift]))
     static let toggleNotchOpen = Self("toggleNotchOpen", default: .init(.i, modifiers: [.command, .shift]))
+    static let nextNotchTab = Self("nextNotchTab", default: .init(.i, modifiers: [.control]))
+    static let previousNotchTab = Self("previousNotchTab", default: .init(.i, modifiers: [.control, .shift]))
     static let openAIChat = Self("openAIChat")
     static let translateSelection = Self("translateSelection", default: .init(.t, modifiers: [.control, .option]))
 }

@@ -34,15 +34,9 @@ struct TabSelectionView: View {
     @Namespace var animation
 
     private var visibleTabs: [TabModel] {
-        tabs.filter { tab in
-            switch tab.view {
-            case .home: return true
-            case .shelf: return boringShelf
-            case .translator: return showTranslatorTab
-            case .aiChat: return showAIChatTab
-            case .notes: return showNotesTab
-            }
-        }
+        TabColumnAvailability.visibleTabs(
+            boringShelf: boringShelf, translator: showTranslatorTab,
+            aiChat: showAIChatTab, notes: showNotesTab)
     }
 
     private var isAvailable: Bool {
@@ -117,6 +111,34 @@ enum TabColumnAvailability {
         ((tabsNonEmpty || alwaysShowTabs) && boringShelf)
             || (boringShelf && clipboardHistory)
             || translator || aiChat || notes
+    }
+
+    static func visibleTabs(boringShelf: Bool, translator: Bool, aiChat: Bool, notes: Bool) -> [TabModel] {
+        tabs.filter { tab in
+            switch tab.view {
+            case .home: return true
+            case .shelf: return boringShelf
+            case .translator: return translator
+            case .aiChat: return aiChat
+            case .notes: return notes
+            }
+        }
+    }
+
+    static func currentVisibleTabs() -> [TabModel] {
+        visibleTabs(
+            boringShelf: Defaults[.boringShelf], translator: Defaults[.showTranslatorTab],
+            aiChat: Defaults[.showAIChatTab], notes: Defaults[.showNotesTab])
+    }
+
+    @MainActor
+    static func isCurrentlyAvailable() -> Bool {
+        isAvailable(
+            tabsNonEmpty: !ShelfStateViewModel.shared.isEmpty,
+            alwaysShowTabs: BoringViewCoordinator.shared.alwaysShowTabs,
+            boringShelf: Defaults[.boringShelf], clipboardHistory: Defaults[.shelfClipboardHistory],
+            translator: Defaults[.showTranslatorTab], aiChat: Defaults[.showAIChatTab],
+            notes: Defaults[.showNotesTab])
     }
 }
 

@@ -439,6 +439,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        KeyboardShortcuts.onKeyDown(for: .nextNotchTab) { [weak self] in
+            Task { @MainActor [weak self] in self?.cycleNotchTab(by: 1) }
+        }
+        KeyboardShortcuts.onKeyDown(for: .previousNotchTab) { [weak self] in
+            Task { @MainActor [weak self] in self?.cycleNotchTab(by: -1) }
+        }
+
         KeyboardShortcuts.onKeyUp(for: .openAIChat) { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self = self, Defaults[.showAIChatTab] else { return }
@@ -598,6 +605,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// The notch view model and window on the screen under the pointer (or the single notch).
+    @MainActor
+    private func cycleNotchTab(by step: Int) {
+        let (viewModel, window) = notchUnderMouse()
+        closeNotchTask?.cancel()
+
+        if viewModel.notchState == .closed {
+            viewModel.open()
+        } else {
+            guard TabColumnAvailability.isCurrentlyAvailable() else { return }
+            let list = TabColumnAvailability.currentVisibleTabs()
+            let n = list.count
+            guard n > 1 else { return }
+            let target: NotchViews
+            if let i = list.firstIndex(where: { $0.view == coordinator.currentView }) {
+                target = list[(i + step + n) % n].view
+            } else {
+                target = step > 0 ? list[0].view : list[n - 1].view
+            }
+            withAnimation(.smooth) { coordinator.currentView = target }
+        }
+
+        closeNotchTask = Task { @MainActor [weak viewModel, weak window] in
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, let viewModel, viewModel.notchState == .open else { return }
+            let hovering = window?.frame.contains(NSEvent.mouseLocation) ?? false
+            if !hovering && !TranslatorManager.shared.keepsNotchOpen && !AIChatManager.shared.keepsNotchOpen && !NotesManager.shared.keepsNotchOpen {
+                viewModel.close()
+            }
+        }
+    }
+
     private func notchUnderMouse() -> (BoringViewModel, NSWindow?) {
         guard Defaults[.showOnAllDisplays] else { return (vm, window) }
         let mouseLocation = NSEvent.mouseLocation
