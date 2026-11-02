@@ -220,7 +220,13 @@ struct TranslatorView: View {
     /// The notch panel only becomes key for typing here. Hand keyboard focus back to the
     /// previously active app when the tab goes away, otherwise keystrokes go to a hidden field.
     private func releaseKeyFocus() {
-        guard let window, window.isKeyWindow else { return }
+        guard let window else { return }
+        let coordinator = BoringViewCoordinator.shared
+        if coordinator.keyHandoffWindow == window.windowNumber {
+            coordinator.keyHandoffWindow = nil
+            return
+        }
+        guard window.isKeyWindow else { return }
         window.orderOut(nil)
         window.orderFrontRegardless()
     }

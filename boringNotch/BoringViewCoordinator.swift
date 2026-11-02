@@ -51,6 +51,8 @@ class BoringViewCoordinator: ObservableObject {
     static let shared = BoringViewCoordinator()
 
     @Published var currentView: NotchViews = .home
+    /// Window whose next typing-tab disappearance (tab hotkey hand-off) must not release key focus.
+    var keyHandoffWindow: Int?
     @Published var helloAnimationRunning: Bool = false
     private var sneakPeekDispatch: DispatchWorkItem?
     private var expandingViewDispatch: DispatchWorkItem?

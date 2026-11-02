@@ -60,7 +60,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var whatsNewWindow: NSWindow?
     var timer: Timer?
     var closeNotchTask: Task<Void, Never>?
-    var focusTabTask: Task<Void, Never>?
     private var previousScreens: [NSScreen]?
     private var onboardingWindowController: NSWindowController?
     private var screenLockedObserver: Any?
@@ -386,7 +385,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
 
-                self.focusTabTask?.cancel()
+                self.coordinator.keyHandoffWindow = nil
                 self.closeNotchTask?.cancel()
                 self.closeNotchTask = nil
 
@@ -421,7 +420,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                 let (viewModel, window) = self.notchUnderMouse()
                 self.closeNotchTask?.cancel()
-                self.focusTabTask?.cancel()
+                self.coordinator.keyHandoffWindow = nil
                 self.coordinator.currentView = .translator
                 viewModel.open()
 
@@ -454,7 +453,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self = self, Defaults[.showAIChatTab] else { return }
                 let (viewModel, notchWindow) = self.notchUnderMouse()
                 self.closeNotchTask?.cancel()
-                self.focusTabTask?.cancel()
+                self.coordinator.keyHandoffWindow = nil
                 self.coordinator.currentView = .aiChat
                 viewModel.open()
                 // canBecomeKey is true now that the tab is aiChat; typing goes to the notch, not the frontmost app.
@@ -612,7 +611,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func cycleNotchTab(by step: Int) {
         let (viewModel, window) = notchUnderMouse()
         closeNotchTask?.cancel()
-        focusTabTask?.cancel()
+        let wasTyping = isTypingTab(coordinator.currentView)
+        let wasOpen = viewModel.notchState == .open
+        let before = coordinator.currentView
 
         if viewModel.notchState == .closed {
             viewModel.open()
@@ -639,27 +640,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // Dwelling 2 s on a typing tab focuses its field.
+        // Landing on a typing tab focuses its field right away.
         let landed = coordinator.currentView
-        guard landed == .translator || landed == .aiChat || landed == .notes else { return }
-        focusTabTask = Task { @MainActor [weak self, weak viewModel, weak window] in
-            // Any close, tab change or cancel within the 2 s aborts the dwell.
-            for _ in 0..<20 {
-                try? await Task.sleep(for: .milliseconds(100))
-                guard !Task.isCancelled, let self, let viewModel, viewModel.notchState == .open,
-                      self.coordinator.currentView == landed else { return }
-            }
-            guard !Task.isCancelled, let self, let window else { return }
-            self.closeNotchTask?.cancel()
-            self.closeNotchTask = nil
-            window.makeKey()
+        if isTypingTab(landed), viewModel.notchState == .open, let window {
+            coordinator.keyHandoffWindow = (wasTyping && wasOpen && landed != before) ? window.windowNumber : nil
             switch landed {
             case .translator: TranslatorManager.shared.pendingFocusWindow = window.windowNumber
             case .aiChat: AIChatManager.shared.pendingFocusWindow = window.windowNumber
             case .notes: NotesManager.shared.pendingFocusWindow = window.windowNumber
             default: break
             }
+            window.makeKey()
+        } else {
+            coordinator.keyHandoffWindow = nil
         }
+    }
+
+    private func isTypingTab(_ v: NotchViews) -> Bool {
+        v == .translator || v == .aiChat || v == .notes
     }
 
     /// The notch view model and window on the screen under the pointer (or the single notch).
