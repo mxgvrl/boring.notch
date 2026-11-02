@@ -343,8 +343,8 @@ struct ContentView: View {
               }
               .zIndex(2)
             if vm.notchState == .open {
-                HStack(alignment: .top, spacing: 8) {
-                    TabSelectionView()
+                HStack(alignment: .top, spacing: 0) {
+                    TabColumnSpacer()
                     VStack {
                         switch coordinator.currentView {
                         case .home:
@@ -368,6 +368,18 @@ struct ContentView: View {
                 .zIndex(1)
                 .allowsHitTesting(vm.notchState == .open)
                 .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            if vm.notchState == .open && !coordinator.helloAnimationRunning {
+                TabSelectionView()
+                    .padding(.top, 8)
+                    .transition(
+                        .scale(scale: 0.8, anchor: .top)
+                        .combined(with: .opacity)
+                        .animation(.smooth(duration: 0.35))
+                    )
+                    .zIndex(3)
             }
         }
         .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], delegate: GeneralDropTargetDelegate(isTargeted: $vm.generalDropTargeting))

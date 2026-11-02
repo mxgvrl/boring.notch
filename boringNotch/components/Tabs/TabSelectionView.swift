@@ -46,38 +46,96 @@ struct TabSelectionView: View {
     }
 
     private var isAvailable: Bool {
-        ((!tvm.isEmpty || coordinator.alwaysShowTabs) && boringShelf)
-            || (boringShelf && shelfClipboardHistory)
-            || showTranslatorTab || showAIChatTab || showNotesTab
+        TabColumnAvailability.isAvailable(
+            tabsNonEmpty: !tvm.isEmpty, alwaysShowTabs: coordinator.alwaysShowTabs,
+            boringShelf: boringShelf, clipboardHistory: shelfClipboardHistory,
+            translator: showTranslatorTab, aiChat: showAIChatTab, notes: showNotesTab)
+    }
+
+    static let buttonHeight: CGFloat = 22
+    static let minGap: CGFloat = 2
+    static let columnWidth: CGFloat = 32
+    private let minSpreadCount = 4
+
+    private func gap(count n: Int, height h: CGFloat) -> CGFloat {
+        let b = Self.buttonHeight
+        let m = max(n, minSpreadCount)
+        return max(Self.minGap, (h - CGFloat(m) * b) / CGFloat(m - 1))
+    }
+
+    private func button(_ tab: TabModel) -> some View {
+        TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
+            withAnimation(.smooth) {
+                coordinator.currentView = tab.view
+            }
+        }
+        .frame(width: Self.columnWidth, height: Self.buttonHeight)
+        .foregroundStyle(tab.view == coordinator.currentView ? .white : .gray)
+        .background {
+            if tab.view == coordinator.currentView {
+                Capsule()
+                    .fill(Color(nsColor: .secondarySystemFill))
+                    .matchedGeometryEffect(id: "capsule", in: animation)
+            } else {
+                Capsule()
+                    .fill(Color.clear)
+                    .matchedGeometryEffect(id: "capsule", in: animation)
+                    .hidden()
+            }
+        }
     }
 
     var body: some View {
         if isAvailable {
-        VStack(spacing: 2) {
-            ForEach(visibleTabs) { tab in
-                    TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
-                        withAnimation(.smooth) {
-                            coordinator.currentView = tab.view
+            GeometryReader { geo in
+                let list = visibleTabs
+                let n = list.count
+                let needed = CGFloat(n) * Self.buttonHeight + CGFloat(max(0, n - 1)) * Self.minGap
+                if needed > geo.size.height {
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: Self.minGap) {
+                            ForEach(list) { button($0) }
                         }
                     }
-                    .frame(width: 32, height: 24)
-                    .foregroundStyle(tab.view == coordinator.currentView ? .white : .gray)
-                    .background {
-                        if tab.view == coordinator.currentView {
-                            Capsule()
-                                .fill(coordinator.currentView == tab.view ? Color(nsColor: .secondarySystemFill) : Color.clear)
-                                .matchedGeometryEffect(id: "capsule", in: animation)
-                        } else {
-                            Capsule()
-                                .fill(coordinator.currentView == tab.view ? Color(nsColor: .secondarySystemFill) : Color.clear)
-                                .matchedGeometryEffect(id: "capsule", in: animation)
-                                .hidden()
-                        }
+                } else {
+                    VStack(spacing: gap(count: n, height: geo.size.height)) {
+                        ForEach(list) { button($0) }
                     }
+                    .frame(maxHeight: .infinity, alignment: .top)
+                }
             }
+            .frame(width: Self.columnWidth)
         }
-        .frame(maxHeight: .infinity, alignment: .top)
-        }
+    }
+}
+
+enum TabColumnAvailability {
+    static func isAvailable(
+        tabsNonEmpty: Bool, alwaysShowTabs: Bool, boringShelf: Bool, clipboardHistory: Bool,
+        translator: Bool, aiChat: Bool, notes: Bool
+    ) -> Bool {
+        ((tabsNonEmpty || alwaysShowTabs) && boringShelf)
+            || (boringShelf && clipboardHistory)
+            || translator || aiChat || notes
+    }
+}
+
+/// Reserves the column's width (+ gap) in the content row while the overlay column is visible.
+struct TabColumnSpacer: View {
+    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var tvm = ShelfStateViewModel.shared
+    @Default(.boringShelf) var boringShelf
+    @Default(.shelfClipboardHistory) var shelfClipboardHistory
+    @Default(.showTranslatorTab) var showTranslatorTab
+    @Default(.showAIChatTab) var showAIChatTab
+    @Default(.showNotesTab) var showNotesTab
+
+    var body: some View {
+        let on = TabColumnAvailability.isAvailable(
+            tabsNonEmpty: !tvm.isEmpty, alwaysShowTabs: coordinator.alwaysShowTabs,
+            boringShelf: boringShelf, clipboardHistory: shelfClipboardHistory,
+            translator: showTranslatorTab, aiChat: showAIChatTab, notes: showNotesTab)
+        Color.clear.frame(width: on ? TabSelectionView.columnWidth + 8 : 0, height: 0)
     }
 }
 
