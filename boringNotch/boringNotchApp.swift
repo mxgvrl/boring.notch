@@ -453,13 +453,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self = self, Defaults[.showAIChatTab] else { return }
                 let (viewModel, notchWindow) = self.notchUnderMouse()
                 self.closeNotchTask?.cancel()
-                self.coordinator.keyHandoffWindow = nil
                 self.coordinator.currentView = .aiChat
                 viewModel.open()
                 // canBecomeKey is true now that the tab is aiChat; typing goes to the notch, not the frontmost app.
-                notchWindow?.makeKey()
                 // The focused field holds the notch open via keepsNotchOpen.
-                AIChatManager.shared.pendingFocusWindow = notchWindow?.windowNumber
+                if let notchWindow {
+                    self.focusTypingTab(.aiChat, in: notchWindow)
+                } else {
+                    self.coordinator.keyHandoffWindow = nil
+                }
             }
         }
 
@@ -642,29 +644,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Landing on a typing tab focuses its field right away.
         let landed = coordinator.currentView
         if isTypingTab(landed), viewModel.notchState == .open, let window {
-            // Another screen's notch holding key: close it first. Its resign-key handler would
-            // otherwise close it later and reset the shared currentView. close() resets the tab
-            // and the hand-off flag, so both are reasserted here in the same main-thread pass.
-            if Defaults[.showOnAllDisplays] {
-                for (uuid, other) in windows where other !== window && other.isKeyWindow {
-                    viewModels[uuid]?.close()
-                }
-            }
-            coordinator.currentView = landed
-            coordinator.keyHandoffWindow = window.windowNumber
-            switch landed {
-            case .translator: TranslatorManager.shared.pendingFocusWindow = window.windowNumber
-            case .aiChat: AIChatManager.shared.pendingFocusWindow = window.windowNumber
-            case .notes: NotesManager.shared.pendingFocusWindow = window.windowNumber
-            default: break
-            }
-            // didResignKey of the previous key window is posted synchronously inside makeKey().
-            coordinator.keyMovingBetweenNotches = true
-            window.makeKey()
-            coordinator.keyMovingBetweenNotches = false
+            focusTypingTab(landed, in: window)
         } else {
             coordinator.keyHandoffWindow = nil
         }
+    }
+
+    /// Makes `window` key on typing tab `tab` and queues the field focus. Shared by the tab hotkeys and openAIChat.
+    @MainActor
+    private func focusTypingTab(_ tab: NotchViews, in window: NSWindow) {
+        // Another screen's notch holding key: close it first. Its resign-key handler would
+        // otherwise close it later and reset the shared currentView. close() resets the tab
+        // and the hand-off flag, so both are reasserted here in the same main-thread pass.
+        if Defaults[.showOnAllDisplays] {
+            for (uuid, other) in windows where other !== window && other.isKeyWindow {
+                viewModels[uuid]?.close()
+            }
+        }
+        coordinator.currentView = tab
+        coordinator.keyHandoffWindow = window.windowNumber
+        switch tab {
+        case .translator: TranslatorManager.shared.pendingFocusWindow = window.windowNumber
+        case .aiChat: AIChatManager.shared.pendingFocusWindow = window.windowNumber
+        case .notes: NotesManager.shared.pendingFocusWindow = window.windowNumber
+        default: break
+        }
+        // didResignKey of the previous key window is posted synchronously inside makeKey().
+        coordinator.keyMovingBetweenNotches = true
+        window.makeKey()
+        coordinator.keyMovingBetweenNotches = false
     }
 
     private func isTypingTab(_ v: NotchViews) -> Bool {
