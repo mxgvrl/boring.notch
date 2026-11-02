@@ -21,6 +21,8 @@ final class NotesManager: ObservableObject {
         }
     }
     @Published var isEditorFocused = false
+    /// One-shot request to focus the editor (tab hotkey dwell).
+    @Published var pendingFocus = false
     /// Text removed by Clear, kept in memory only so Undo can bring it back.
     @Published private(set) var clearedText: String?
 
@@ -110,6 +112,12 @@ struct NotesView: View {
         .onChange(of: editorFocused) { _, focused in
             manager.isEditorFocused = focused
         }
+        .onChange(of: manager.pendingFocus) { _, _ in
+            consumePendingFocus()
+        }
+        .onAppear {
+            consumePendingFocus()
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { note in
             guard let window, note.object as? NSWindow === window else { return }
             editorFocused = false
@@ -186,6 +194,12 @@ struct NotesView: View {
                         .allowsHitTesting(false)
                 }
             }
+    }
+
+    private func consumePendingFocus() {
+        guard manager.pendingFocus else { return }
+        manager.pendingFocus = false
+        editorFocused = true
     }
 
     private func closeIfPointerLeft() {

@@ -57,6 +57,9 @@ struct TranslatorView: View {
         .onChange(of: inputFocused) { _, focused in
             translator.isInputFocused = focused
         }
+        .onChange(of: translator.pendingFocus) { _, _ in
+            consumePendingFocus()
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { note in
             guard let window, note.object as? NSWindow === window else { return }
             inputFocused = false
@@ -76,6 +79,7 @@ struct TranslatorView: View {
             closeIfPointerLeft()
         }
         .onAppear {
+            consumePendingFocus()
             translator.loadLanguagesIfNeeded()
         }
         .onDisappear {
@@ -92,6 +96,12 @@ struct TranslatorView: View {
     }
 
     /// Hover-out is ignored while typing or picking a language; close once that ends off-notch.
+    private func consumePendingFocus() {
+        guard translator.pendingFocus else { return }
+        translator.pendingFocus = false
+        inputFocused = true
+    }
+
     private func closeIfPointerLeft() {
         guard let window, !translator.keepsNotchOpen,
               !window.frame.contains(NSEvent.mouseLocation) else { return }
