@@ -51,8 +51,8 @@ final class TranslatorManager: ObservableObject {
     @Published var error: TranslatorError?
     /// True while the input field has keyboard focus; keeps the notch from closing on hover-out.
     @Published var isInputFocused = false
-    /// One-shot request to focus the input field (tab hotkey dwell).
-    @Published var pendingFocus = false
+    /// One-shot request (target NSWindow.windowNumber) to focus the input field (tab hotkey dwell).
+    @Published var pendingFocusWindow: Int?
     /// True while a language menu is open: the pointer leaves the notch to reach the menu.
     @Published var isMenuOpen = false
 

@@ -21,8 +21,8 @@ final class NotesManager: ObservableObject {
         }
     }
     @Published var isEditorFocused = false
-    /// One-shot request to focus the editor (tab hotkey dwell).
-    @Published var pendingFocus = false
+    /// One-shot request (target NSWindow.windowNumber) to focus the editor (tab hotkey dwell).
+    @Published var pendingFocusWindow: Int?
     /// Text removed by Clear, kept in memory only so Undo can bring it back.
     @Published private(set) var clearedText: String?
 
@@ -107,12 +107,15 @@ struct NotesView: View {
         .padding(.top, 2)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(NotesWindowAccessor { resolved in
-            if window !== resolved { window = resolved }
+            if window !== resolved {
+                window = resolved
+                consumePendingFocus()
+            }
         })
         .onChange(of: editorFocused) { _, focused in
             manager.isEditorFocused = focused
         }
-        .onChange(of: manager.pendingFocus) { _, _ in
+        .onChange(of: manager.pendingFocusWindow) { _, _ in
             consumePendingFocus()
         }
         .onAppear {
@@ -197,8 +200,8 @@ struct NotesView: View {
     }
 
     private func consumePendingFocus() {
-        guard manager.pendingFocus else { return }
-        manager.pendingFocus = false
+        guard let target = manager.pendingFocusWindow, let window, window.windowNumber == target else { return }
+        manager.pendingFocusWindow = nil
         editorFocused = true
     }
 

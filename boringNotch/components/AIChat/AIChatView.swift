@@ -26,12 +26,15 @@ struct AIChatView: View {
         .padding(.top, 2)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(AIChatWindowAccessor { resolved in
-            if window !== resolved { window = resolved }
+            if window !== resolved {
+                window = resolved
+                consumePendingFocus()
+            }
         })
         .onChange(of: inputFocused) { _, focused in
             manager.isInputFocused = focused
         }
-        .onChange(of: manager.pendingFocus) { _, _ in
+        .onChange(of: manager.pendingFocusWindow) { _, _ in
             consumePendingFocus()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { note in
@@ -68,8 +71,8 @@ struct AIChatView: View {
     }
 
     private func consumePendingFocus() {
-        guard manager.pendingFocus else { return }
-        manager.pendingFocus = false
+        guard let target = manager.pendingFocusWindow, let window, window.windowNumber == target else { return }
+        manager.pendingFocusWindow = nil
         inputFocused = true
     }
 

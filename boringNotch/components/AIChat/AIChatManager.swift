@@ -27,7 +27,7 @@ final class AIChatManager: ObservableObject {
     @Published private(set) var error: AIChatError?
     @Published var isInputFocused = false
     @Published var isMenuOpen = false
-    @Published var pendingFocus = false
+    @Published var pendingFocusWindow: Int?
     @Published private(set) var recentChats: [AIChatSummary] = []
 
     var keepsNotchOpen: Bool {

@@ -459,7 +459,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 // canBecomeKey is true now that the tab is aiChat; typing goes to the notch, not the frontmost app.
                 notchWindow?.makeKey()
                 // The focused field holds the notch open via keepsNotchOpen.
-                AIChatManager.shared.pendingFocus = true
+                AIChatManager.shared.pendingFocusWindow = notchWindow?.windowNumber
             }
         }
 
@@ -642,16 +642,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let landed = coordinator.currentView
         guard landed == .translator || landed == .aiChat || landed == .notes else { return }
         focusTabTask = Task { @MainActor [weak self, weak viewModel, weak window] in
-            try? await Task.sleep(for: .seconds(2))
-            guard !Task.isCancelled, let self, let viewModel, viewModel.notchState == .open,
-                  self.coordinator.currentView == landed else { return }
+            // Any close, tab change or cancel within the 2 s aborts the dwell.
+            for _ in 0..<20 {
+                try? await Task.sleep(for: .milliseconds(100))
+                guard !Task.isCancelled, let self, let viewModel, viewModel.notchState == .open,
+                      self.coordinator.currentView == landed else { return }
+            }
+            guard !Task.isCancelled, let self, let window else { return }
             self.closeNotchTask?.cancel()
             self.closeNotchTask = nil
-            window?.makeKey()
+            window.makeKey()
             switch landed {
-            case .translator: TranslatorManager.shared.pendingFocus = true
-            case .aiChat: AIChatManager.shared.pendingFocus = true
-            case .notes: NotesManager.shared.pendingFocus = true
+            case .translator: TranslatorManager.shared.pendingFocusWindow = window.windowNumber
+            case .aiChat: AIChatManager.shared.pendingFocusWindow = window.windowNumber
+            case .notes: NotesManager.shared.pendingFocusWindow = window.windowNumber
             default: break
             }
         }
