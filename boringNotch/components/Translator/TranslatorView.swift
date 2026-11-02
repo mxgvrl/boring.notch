@@ -86,6 +86,7 @@ struct TranslatorView: View {
             translator.loadLanguagesIfNeeded()
         }
         .onDisappear {
+            vm.isHoveringScrollableContent = false
             translator.isInputFocused = false
             translator.isMenuOpen = false
             menuDepth = 0
@@ -168,6 +169,7 @@ struct TranslatorView: View {
                 .padding(8)
                 .padding(.bottom, 18)
             }
+            .onHover { vm.isHoveringScrollableContent = $0 }
 
             if !translator.output.isEmpty && translator.error == nil {
                 Button {

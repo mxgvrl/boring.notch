@@ -63,6 +63,7 @@ struct AIChatView: View {
             manager.refreshHistory()
         }
         .onDisappear {
+            vm.isHoveringScrollableContent = false
             manager.isInputFocused = false
             manager.isMenuOpen = false
             menuDepth = 0
@@ -160,6 +161,7 @@ struct AIChatView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.04)))
+        .onHover { vm.isHoveringScrollableContent = $0 }
     }
 
     private func bubble(_ text: String, isUser: Bool) -> some View {

@@ -165,6 +165,7 @@ mediaremote-adapter/            готовый MediaRemoteAdapter.framework (б�
 - `@EnvironmentObject var vm: BoringViewModel` — состояние выреза (размеры, open/closed);
 - `@ObservedObject var coordinator = BoringViewCoordinator.shared` и синглтоны менеджеров (`MusicManager.shared`, `WebcamManager.shared`…);
 - настройки читаются как `Defaults[.key]` или `@Default(.key)`; новый ключ — в `models/Constants.swift`, тумблер для него — в нужном разделе `SettingsView.swift`.
+- прокручиваемые области внутри вкладки (`ScrollView`, `TextEditor`) ставят `vm.isHoveringScrollableContent` в `.onHover` и сбрасывают в `.onDisappear`: иначе оконный монитор скролла (`PanGesture`) превращает их прокрутку в жест закрытия выреза свайпом вверх.
 
 Пример: `NotchHomeView` (`components/Notch/NotchHomeView.swift`) — `HStack` из `MusicPlayerView`, `CalendarView` (если `Defaults[.showCalendar]`) и камеры (если `Defaults[.showMirror]`). `ShelfView` — более крупная вкладка с MVVM (Models/Services/ViewModels/Views).
 

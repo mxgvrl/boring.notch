@@ -128,6 +128,7 @@ struct NotesView: View {
             closeIfPointerLeft()
         }
         .onDisappear {
+            vm.isHoveringScrollableContent = false
             editorFocused = false
             manager.isEditorFocused = false
             manager.flush()
@@ -184,6 +185,7 @@ struct NotesView: View {
             .font(.system(size: 13))
             .foregroundStyle(.white)
             .focused($editorFocused)
+            .onHover { vm.isHoveringScrollableContent = $0 }
             .padding(4)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.07)))

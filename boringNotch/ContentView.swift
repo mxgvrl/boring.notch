@@ -605,7 +605,14 @@ struct ContentView: View {
     }
 
     private func handleUpGesture(translation: CGFloat, phase: NSEvent.Phase) {
-        guard vm.notchState == .open && !vm.isHoveringCalendar else { return }
+        guard vm.notchState == .open else { return }
+        guard !vm.isHoveringCalendar && !vm.isHoveringScrollableContent else {
+            // Pointer moved onto scrollable content mid-gesture: undo any partial shrink.
+            if gestureProgress != .zero {
+                withAnimation(animationSpring) { gestureProgress = .zero }
+            }
+            return
+        }
 
         withAnimation(animationSpring) {
             gestureProgress = (translation / Defaults[.gestureSensitivity]) * -20
