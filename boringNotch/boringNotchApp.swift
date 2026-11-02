@@ -420,9 +420,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                 let (viewModel, window) = self.notchUnderMouse()
                 self.closeNotchTask?.cancel()
+                // A notch already holding key (field focused via the tab hotkey) keeps it and moves
+                // focus to the translator field; releasing it would drop key and close the notch.
+                let notchHadKey = NSApp.keyWindow is BoringNotchSkyLightWindow
                 self.coordinator.keyHandoffWindow = nil
                 self.coordinator.currentView = .translator
                 viewModel.open()
+                if notchHadKey, let window {
+                    self.focusTypingTab(.translator, in: window)
+                }
 
                 // Auto-close unless the pointer is over the notch (hover-out closes it then)
                 // or the user is typing in the translator field.
