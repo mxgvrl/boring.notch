@@ -386,6 +386,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
 
+                self.focusTabTask?.cancel()
                 self.closeNotchTask?.cancel()
                 self.closeNotchTask = nil
 
