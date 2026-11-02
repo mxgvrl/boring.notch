@@ -16,10 +16,13 @@ final class NotesManager: ObservableObject {
     @Published var text = "" {
         didSet {
             guard text != oldValue, !isLoading else { return }
+            if !text.isEmpty { clearedText = nil }
             scheduleSave()
         }
     }
     @Published var isEditorFocused = false
+    /// Text removed by Clear, kept in memory only so Undo can bring it back.
+    @Published private(set) var clearedText: String?
 
     var keepsNotchOpen: Bool { isEditorFocused }
 
@@ -62,7 +65,17 @@ final class NotesManager: ObservableObject {
     }
 
     func clear() {
+        guard !text.isEmpty else { return }
+        let previous = text
         text = ""
+        clearedText = previous
+        flush()
+    }
+
+    func undoClear() {
+        guard let previous = clearedText, text.isEmpty else { return }
+        text = previous
+        clearedText = nil
         flush()
     }
 
@@ -132,14 +145,24 @@ struct NotesView: View {
             .buttonStyle(.plain)
             .disabled(manager.text.isEmpty)
 
-            Button {
-                manager.clear()
-            } label: {
-                Text("Clear")
-                    .font(.caption.weight(.semibold))
+            if manager.text.isEmpty, manager.clearedText != nil {
+                Button {
+                    manager.undoClear()
+                } label: {
+                    Text("Undo")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+            } else {
+                Button {
+                    manager.clear()
+                } label: {
+                    Text("Clear")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .disabled(manager.text.isEmpty)
             }
-            .buttonStyle(.plain)
-            .disabled(manager.text.isEmpty)
         }
         .foregroundStyle(.white)
     }

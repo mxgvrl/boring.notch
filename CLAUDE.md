@@ -115,7 +115,7 @@ mediaremote-adapter/            готовый MediaRemoteAdapter.framework (б�
 
 1. `enums/generic.swift` → `enum NotchViews { case home, shelf, translator, aiChat, notes }` — какие вкладки существуют.
 2. `components/Tabs/TabSelectionView.swift` → `let tabs = [TabModel(label:icon:view:)]` — кнопки в шапке (иконка — SF Symbol); `visibleTabs` прячет выключенные в настройках. Клик ставит `BoringViewCoordinator.shared.currentView`.
-3. `ContentView.swift` (~стр. 345) → `switch coordinator.currentView { case .home: NotchHomeView(...); case .shelf: ShelfView(); case .translator: TranslatorView(); case .aiChat: AIChatView() }` — какой view рисуется в открытом вырезе.
+3. `ContentView.swift` (~стр. 345) → `switch coordinator.currentView { case .home: NotchHomeView(...); case .shelf: ShelfView(); case .translator: TranslatorView(); case .aiChat: AIChatView(); case .notes: NotesView() }` — какой view рисуется в открытом вырезе.
 4. `components/Notch/BoringHeader.swift` — переключатель вкладок показывается, если доступен Shelf (`Defaults[.boringShelf]` и shelf не пуст, или `coordinator.alwaysShowTabs`, или включена история буфера `Defaults[.shelfClipboardHistory]`) или включён переводчик (`Defaults[.showTranslatorTab]`) или Ask AI (`Defaults[.showAIChatTab]`) или Notes (`Defaults[.showNotesTab]`).
 
 Добавить вкладку = новый case в `NotchViews` + элемент в `tabs` (и в `visibleTabs`) + ветка в `switch` в `ContentView` (Swift заставит обработать case во всех `switch`).
@@ -126,7 +126,7 @@ mediaremote-adapter/            готовый MediaRemoteAdapter.framework (б�
 - `components/Translator/TranslatorView.swift` — UI вкладки (`LanguageMenu` источника/цели, кнопка ⇄) и `TranslatorSettings` (раздел настроек «Translator», включая список Starred languages).
 - Языки: `Defaults[.translatorSource]` / `[.translatorTarget]` (nil = авто: источник определяет DeepL, цель «любой → RU, RU → EN»), `[.translatorStarredLanguages]` — коды целей (`EN-US`, не `EN`); для меню источника сравниваются по базовому коду.
 - Ключ DeepL — `Defaults[.deeplAPIKey]` (plist в контейнере песочницы; не Keychain, т.к. ad-hoc подпись меняется при каждой сборке).
-- Ввод с клавиатуры: окно выреза (`BoringNotchSkyLightWindow.canBecomeKey`) может стать key только на вкладках translator и aiChat. Пока поле в фокусе или открыто меню языков (`TranslatorManager.keepsNotchOpen`), hover-out не закрывает вырез. При уходе с вкладки фокус возвращается через `orderOut` + `orderFrontRegardless`.
+- Ввод с клавиатуры: окно выреза (`BoringNotchSkyLightWindow.canBecomeKey`) может стать key только на вкладках translator, aiChat и notes. Пока поле в фокусе или открыто меню языков (`TranslatorManager.keepsNotchOpen`), hover-out не закрывает вырез. При уходе с вкладки фокус возвращается через `orderOut` + `orderFrontRegardless`.
 - Хоткей `.translateSelection` (⌃⌥T) — обработчик в `boringNotchApp.swift`, нажатие ⌘C — `postCopyShortcut` в `BoringNotchXPCHelper` (протокол продублирован в `BoringNotchXPCHelper/` и `boringNotch/XPCHelperClient/` — менять оба).
 - Нужен доступ Accessibility. Со стабильным сертификатом `macbrow` достаточно один раз после перехода с ad-hoc: удалить Boring Notch из списка в System Settings → Privacy & Security → Accessibility и выдать заново. Если подпись всё ещё ad-hoc, то это нужно после каждой пересборки (macOS перестаёт признавать доступ).
 
@@ -146,6 +146,7 @@ mediaremote-adapter/            готовый MediaRemoteAdapter.framework (б�
 - `components/Notes/NotesView.swift` — `NotesManager` (синглтон, текст, `keepsNotchOpen` = фокус редактора), `NotesView` (одна заметка в `TextEditor`, кнопки Copy/Clear) и `NotesSettings` (раздел «Notes»).
 - Ключ `Defaults[.showNotesTab]` (по умолчанию true). Заметка — один простой текст в `Application Support/Notes/note.txt` (не в Defaults: plist перезаписывается целиком); сохранение с задержкой 0.5 с, плюс сразу при уходе с вкладки и при выходе из приложения.
 - Ввод с клавиатуры как у Translator/Ask AI: `canBecomeKey` включает `.notes`, пока фокус в редакторе hover-out не закрывает вырез. Copy пишет в буфер с `markOwnWrite()`.
+- Clear → Undo: `clear()` кладёт прежний текст в `clearedText` (только в памяти); пока заметка пуста, вместо Clear показывается Undo; любой ввод сбрасывает `clearedText`.
 
 ### Shelf + история буфера обмена (кастомное)
 
