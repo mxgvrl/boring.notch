@@ -114,9 +114,9 @@ mediaremote-adapter/            готовый MediaRemoteAdapter.framework (б�
 ### Навигация по вкладкам
 
 1. `enums/generic.swift` → `enum NotchViews { case home, shelf, translator, aiChat, notes }` — какие вкладки существуют.
-2. `components/Tabs/TabSelectionView.swift` → `let tabs = [TabModel(label:icon:view:)]` — кнопки в шапке (иконка — SF Symbol); `visibleTabs` прячет выключенные в настройках. Клик ставит `BoringViewCoordinator.shared.currentView`.
+2. `components/Tabs/TabSelectionView.swift` → `let tabs = [TabModel(label:icon:view:)]` — кнопки (иконка — SF Symbol) вертикальной колонкой сверху вниз; рисуется в `ContentView` слева от области контента открытого выреза, не в шапке (5 вкладок не помещаются слева от физического выреза). `visibleTabs` прячет выключенные в настройках. Клик ставит `BoringViewCoordinator.shared.currentView`.
 3. `ContentView.swift` (~стр. 345) → `switch coordinator.currentView { case .home: NotchHomeView(...); case .shelf: ShelfView(); case .translator: TranslatorView(); case .aiChat: AIChatView(); case .notes: NotesView() }` — какой view рисуется в открытом вырезе.
-4. `components/Notch/BoringHeader.swift` — переключатель вкладок показывается, если доступен Shelf (`Defaults[.boringShelf]` и shelf не пуст, или `coordinator.alwaysShowTabs`, или включена история буфера `Defaults[.shelfClipboardHistory]`) или включён переводчик (`Defaults[.showTranslatorTab]`) или Ask AI (`Defaults[.showAIChatTab]`) или Notes (`Defaults[.showNotesTab]`).
+4. `components/Notch/BoringHeader.swift` — переключатель больше не рисует (левый слот пуст); сама `TabSelectionView` показывается, если доступен Shelf (`Defaults[.boringShelf]` и shelf не пуст, или `coordinator.alwaysShowTabs`, или включена история буфера `Defaults[.shelfClipboardHistory]`) или включён переводчик (`Defaults[.showTranslatorTab]`) или Ask AI (`Defaults[.showAIChatTab]`) или Notes (`Defaults[.showNotesTab]`).
 
 Добавить вкладку = новый case в `NotchViews` + элемент в `tabs` (и в `visibleTabs`) + ветка в `switch` в `ContentView` (Swift заставит обработать case во всех `switch`).
 

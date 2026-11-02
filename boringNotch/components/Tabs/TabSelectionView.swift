@@ -25,7 +25,9 @@ let tabs = [
 
 struct TabSelectionView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var tvm = ShelfStateViewModel.shared
     @Default(.boringShelf) var boringShelf
+    @Default(.shelfClipboardHistory) var shelfClipboardHistory
     @Default(.showTranslatorTab) var showTranslatorTab
     @Default(.showAIChatTab) var showAIChatTab
     @Default(.showNotesTab) var showNotesTab
@@ -43,15 +45,22 @@ struct TabSelectionView: View {
         }
     }
 
+    private var isAvailable: Bool {
+        ((!tvm.isEmpty || coordinator.alwaysShowTabs) && boringShelf)
+            || (boringShelf && shelfClipboardHistory)
+            || showTranslatorTab || showAIChatTab || showNotesTab
+    }
+
     var body: some View {
-        HStack(spacing: 0) {
+        if isAvailable {
+        VStack(spacing: 2) {
             ForEach(visibleTabs) { tab in
                     TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
                         withAnimation(.smooth) {
                             coordinator.currentView = tab.view
                         }
                     }
-                    .frame(height: 26)
+                    .frame(width: 32, height: 24)
                     .foregroundStyle(tab.view == coordinator.currentView ? .white : .gray)
                     .background {
                         if tab.view == coordinator.currentView {
@@ -67,7 +76,8 @@ struct TabSelectionView: View {
                     }
             }
         }
-        .clipShape(Capsule())
+        .frame(maxHeight: .infinity, alignment: .top)
+        }
     }
 }
 

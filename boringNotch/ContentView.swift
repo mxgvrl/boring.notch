@@ -343,18 +343,21 @@ struct ContentView: View {
               }
               .zIndex(2)
             if vm.notchState == .open {
-                VStack {
-                    switch coordinator.currentView {
-                    case .home:
-                        NotchHomeView(albumArtNamespace: albumArtNamespace)
-                    case .shelf:
-                        ShelfView()
-                    case .translator:
-                        TranslatorView()
-                    case .aiChat:
-                        AIChatView()
-                    case .notes:
-                        NotesView()
+                HStack(alignment: .top, spacing: 8) {
+                    TabSelectionView()
+                    VStack {
+                        switch coordinator.currentView {
+                        case .home:
+                            NotchHomeView(albumArtNamespace: albumArtNamespace)
+                        case .shelf:
+                            ShelfView()
+                        case .translator:
+                            TranslatorView()
+                        case .aiChat:
+                            AIChatView()
+                        case .notes:
+                            NotesView()
+                        }
                     }
                 }
                 .transition(
