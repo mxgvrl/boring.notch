@@ -57,6 +57,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Ask AI") {
                     Label("Ask AI", systemImage: "sparkles")
                 }
+                NavigationLink(value: "Notes") {
+                    Label("Notes", systemImage: "note.text")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -95,6 +98,8 @@ struct SettingsView: View {
                     TranslatorSettings()
                 case "Ask AI":
                     AIChatSettings()
+                case "Notes":
+                    NotesSettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":

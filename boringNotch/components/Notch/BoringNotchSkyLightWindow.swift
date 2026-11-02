@@ -109,11 +109,11 @@ class BoringNotchSkyLightWindow: NSPanel {
     
     private var observers: Set<AnyCancellable> = []
     
-    // Only the Translator and Ask AI tabs take keyboard input; as a non-activating panel this doesn't
+    // Only the Translator, Ask AI and Notes tabs take keyboard input; as a non-activating panel this doesn't
     // activate the app or steal focus until its text field is clicked.
     override var canBecomeKey: Bool {
         MainActor.assumeIsolated {
-            BoringViewCoordinator.shared.currentView == .translator || BoringViewCoordinator.shared.currentView == .aiChat
+            BoringViewCoordinator.shared.currentView == .translator || BoringViewCoordinator.shared.currentView == .aiChat || BoringViewCoordinator.shared.currentView == .notes
         }
     }
     override var canBecomeMain: Bool { false }

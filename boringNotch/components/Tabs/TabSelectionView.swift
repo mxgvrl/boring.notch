@@ -19,7 +19,8 @@ let tabs = [
     TabModel(label: "Home", icon: "house.fill", view: .home),
     TabModel(label: "Shelf", icon: "tray.fill", view: .shelf),
     TabModel(label: "Translator", icon: "character.bubble.fill", view: .translator),
-    TabModel(label: "Ask AI", icon: "sparkles", view: .aiChat)
+    TabModel(label: "Ask AI", icon: "sparkles", view: .aiChat),
+    TabModel(label: "Notes", icon: "note.text", view: .notes)
 ]
 
 struct TabSelectionView: View {
@@ -27,6 +28,7 @@ struct TabSelectionView: View {
     @Default(.boringShelf) var boringShelf
     @Default(.showTranslatorTab) var showTranslatorTab
     @Default(.showAIChatTab) var showAIChatTab
+    @Default(.showNotesTab) var showNotesTab
     @Namespace var animation
 
     private var visibleTabs: [TabModel] {
@@ -36,6 +38,7 @@ struct TabSelectionView: View {
             case .shelf: return boringShelf
             case .translator: return showTranslatorTab
             case .aiChat: return showAIChatTab
+            case .notes: return showNotesTab
             }
         }
     }

@@ -208,6 +208,9 @@ extension Defaults.Keys {
     static let anthropicAPIKey = Key<String>("anthropicAPIKey", default: "")
     static let aiChatWebSearch = Key<Bool>("aiChatWebSearch", default: true)
 
+    // MARK: Notes
+    static let showNotesTab = Key<Bool>("showNotesTab", default: true)
+
     // Helper to determine the default media controller based on NowPlaying deprecation status
     static var defaultMediaController: MediaControllerType {
         if MusicManager.shared.isNowPlayingDeprecated {

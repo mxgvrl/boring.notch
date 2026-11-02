@@ -429,7 +429,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         try? await Task.sleep(for: .seconds(8))
                         guard !Task.isCancelled, let viewModel, viewModel.notchState == .open else { return }
                         let hovering = window?.frame.contains(NSEvent.mouseLocation) ?? false
-                        if !hovering && !TranslatorManager.shared.keepsNotchOpen && !AIChatManager.shared.keepsNotchOpen {
+                        if !hovering && !TranslatorManager.shared.keepsNotchOpen && !AIChatManager.shared.keepsNotchOpen && !NotesManager.shared.keepsNotchOpen {
                             viewModel.close()
                             return
                         }

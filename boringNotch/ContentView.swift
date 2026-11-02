@@ -353,6 +353,8 @@ struct ContentView: View {
                         TranslatorView()
                     case .aiChat:
                         AIChatView()
+                    case .notes:
+                        NotesView()
                     }
                 }
                 .transition(
@@ -554,7 +556,7 @@ struct ContentView: View {
                     }
                     
                     if self.vm.notchState == .open && !self.vm.isBatteryPopoverActive && !SharingStateManager.shared.preventNotchClose
-                        && !TranslatorManager.shared.keepsNotchOpen && !AIChatManager.shared.keepsNotchOpen {
+                        && !TranslatorManager.shared.keepsNotchOpen && !AIChatManager.shared.keepsNotchOpen && !NotesManager.shared.keepsNotchOpen {
                         self.vm.close()
                     }
                 }

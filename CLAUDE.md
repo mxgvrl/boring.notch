@@ -113,10 +113,10 @@ mediaremote-adapter/            готовый MediaRemoteAdapter.framework (б�
 
 ### Навигация по вкладкам
 
-1. `enums/generic.swift` → `enum NotchViews { case home, shelf, translator, aiChat }` — какие вкладки существуют.
+1. `enums/generic.swift` → `enum NotchViews { case home, shelf, translator, aiChat, notes }` — какие вкладки существуют.
 2. `components/Tabs/TabSelectionView.swift` → `let tabs = [TabModel(label:icon:view:)]` — кнопки в шапке (иконка — SF Symbol); `visibleTabs` прячет выключенные в настройках. Клик ставит `BoringViewCoordinator.shared.currentView`.
 3. `ContentView.swift` (~стр. 345) → `switch coordinator.currentView { case .home: NotchHomeView(...); case .shelf: ShelfView(); case .translator: TranslatorView(); case .aiChat: AIChatView() }` — какой view рисуется в открытом вырезе.
-4. `components/Notch/BoringHeader.swift` — переключатель вкладок показывается, если доступен Shelf (`Defaults[.boringShelf]` и shelf не пуст, или `coordinator.alwaysShowTabs`, или включена история буфера `Defaults[.shelfClipboardHistory]`) или включён переводчик (`Defaults[.showTranslatorTab]`) или Ask AI (`Defaults[.showAIChatTab]`).
+4. `components/Notch/BoringHeader.swift` — переключатель вкладок показывается, если доступен Shelf (`Defaults[.boringShelf]` и shelf не пуст, или `coordinator.alwaysShowTabs`, или включена история буфера `Defaults[.shelfClipboardHistory]`) или включён переводчик (`Defaults[.showTranslatorTab]`) или Ask AI (`Defaults[.showAIChatTab]`) или Notes (`Defaults[.showNotesTab]`).
 
 Добавить вкладку = новый case в `NotchViews` + элемент в `tabs` (и в `visibleTabs`) + ветка в `switch` в `ContentView` (Swift заставит обработать case во всех `switch`).
 
@@ -140,6 +140,12 @@ mediaremote-adapter/            готовый MediaRemoteAdapter.framework (б�
 - История: `Application Support/AIChat/YYYY-MM-DD-<uuid>.json`, хранится только текст (без thinking/tool-блоков), сохраняется после каждого ответа, файлы старше 30 дней удаляются через `refreshHistory()` (появление вкладки, открытие меню History, каждое сохранение); `load()` не открывает чат старше 30 дней (удаляет файл); нечитаемые файлы — по дате модификации. В API уходят только текстовые реплики user/assistant. `pause_turn` показывается как «(stopped early)», `max_tokens` — «(cut off)» (лимит 2048), `refusal` — фиксированной фразой.
 
 - Смена чата (New chat / History) синхронно завершает текущий стрим (частичный ответ сохраняется в старый чат); события устаревшего стрима отбрасываются по `turnID`.
+
+### Вкладка Notes (кастомная)
+
+- `components/Notes/NotesView.swift` — `NotesManager` (синглтон, текст, `keepsNotchOpen` = фокус редактора), `NotesView` (одна заметка в `TextEditor`, кнопки Copy/Clear) и `NotesSettings` (раздел «Notes»).
+- Ключ `Defaults[.showNotesTab]` (по умолчанию true). Заметка — один простой текст в `Application Support/Notes/note.txt` (не в Defaults: plist перезаписывается целиком); сохранение с задержкой 0.5 с, плюс сразу при уходе с вкладки и при выходе из приложения.
+- Ввод с клавиатуры как у Translator/Ask AI: `canBecomeKey` включает `.notes`, пока фокус в редакторе hover-out не закрывает вырез. Copy пишет в буфер с `markOwnWrite()`.
 
 ### Shelf + история буфера обмена (кастомное)
 
