@@ -206,6 +206,7 @@ struct NotesView: View {
     }
 
     private func closeIfPointerLeft() {
+        guard !BoringViewCoordinator.shared.keyMovingBetweenNotches else { return }
         guard let window, !manager.keepsNotchOpen,
               !window.frame.contains(NSEvent.mouseLocation) else { return }
         vm.close()
@@ -216,8 +217,7 @@ struct NotesView: View {
     private func releaseKeyFocus() {
         guard let window else { return }
         let coordinator = BoringViewCoordinator.shared
-        if coordinator.keyHandoffWindow == window.windowNumber {
-            coordinator.keyHandoffWindow = nil
+        if coordinator.keyHandoffWindow == window.windowNumber, coordinator.isTypingTabCurrent {
             return
         }
         guard window.isKeyWindow else { return }

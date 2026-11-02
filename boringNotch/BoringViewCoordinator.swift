@@ -51,8 +51,15 @@ class BoringViewCoordinator: ObservableObject {
     static let shared = BoringViewCoordinator()
 
     @Published var currentView: NotchViews = .home
-    /// Window whose next typing-tab disappearance (tab hotkey hand-off) must not release key focus.
+    /// Window in hotkey-driven typing mode (tab hotkey focused its field): while the current tab is a
+    /// typing tab, that window's view must not release key focus when a typing view disappears.
     var keyHandoffWindow: Int?
+    /// True only around a synchronous `makeKey()` that moves key between notch windows;
+    /// resign-key handlers must not close their notch then.
+    var keyMovingBetweenNotches = false
+    var isTypingTabCurrent: Bool {
+        currentView == .translator || currentView == .aiChat || currentView == .notes
+    }
     @Published var helloAnimationRunning: Bool = false
     private var sneakPeekDispatch: DispatchWorkItem?
     private var expandingViewDispatch: DispatchWorkItem?

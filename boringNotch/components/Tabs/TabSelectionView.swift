@@ -59,6 +59,7 @@ struct TabSelectionView: View {
 
     private func button(_ tab: TabModel) -> some View {
         TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
+            coordinator.keyHandoffWindow = nil
             withAnimation(.smooth) {
                 coordinator.currentView = tab.view
             }

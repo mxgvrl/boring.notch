@@ -611,9 +611,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func cycleNotchTab(by step: Int) {
         let (viewModel, window) = notchUnderMouse()
         closeNotchTask?.cancel()
-        let wasTyping = isTypingTab(coordinator.currentView)
-        let wasOpen = viewModel.notchState == .open
-        let before = coordinator.currentView
 
         if viewModel.notchState == .closed {
             viewModel.open()
@@ -628,6 +625,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             } else {
                 target = step > 0 ? list[0].view : list[n - 1].view
             }
+            // Leaving for a non-typing tab: clear the flag first so the leaving view releases key.
+            if !isTypingTab(target) { coordinator.keyHandoffWindow = nil }
             withAnimation(.smooth) { coordinator.currentView = target }
         }
 
@@ -643,14 +642,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Landing on a typing tab focuses its field right away.
         let landed = coordinator.currentView
         if isTypingTab(landed), viewModel.notchState == .open, let window {
-            coordinator.keyHandoffWindow = (wasTyping && wasOpen && landed != before) ? window.windowNumber : nil
+            // Another screen's notch holding key: close it first. Its resign-key handler would
+            // otherwise close it later and reset the shared currentView. close() resets the tab
+            // and the hand-off flag, so both are reasserted here in the same main-thread pass.
+            if Defaults[.showOnAllDisplays] {
+                for (uuid, other) in windows where other !== window && other.isKeyWindow {
+                    viewModels[uuid]?.close()
+                }
+            }
+            coordinator.currentView = landed
+            coordinator.keyHandoffWindow = window.windowNumber
             switch landed {
             case .translator: TranslatorManager.shared.pendingFocusWindow = window.windowNumber
             case .aiChat: AIChatManager.shared.pendingFocusWindow = window.windowNumber
             case .notes: NotesManager.shared.pendingFocusWindow = window.windowNumber
             default: break
             }
+            // didResignKey of the previous key window is posted synchronously inside makeKey().
+            coordinator.keyMovingBetweenNotches = true
             window.makeKey()
+            coordinator.keyMovingBetweenNotches = false
         } else {
             coordinator.keyHandoffWindow = nil
         }

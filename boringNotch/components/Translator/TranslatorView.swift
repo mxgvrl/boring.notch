@@ -106,6 +106,7 @@ struct TranslatorView: View {
 
     /// Hover-out is ignored while typing or picking a language; close once that ends off-notch.
     private func closeIfPointerLeft() {
+        guard !BoringViewCoordinator.shared.keyMovingBetweenNotches else { return }
         guard let window, !translator.keepsNotchOpen,
               !window.frame.contains(NSEvent.mouseLocation) else { return }
         vm.close()
@@ -222,8 +223,7 @@ struct TranslatorView: View {
     private func releaseKeyFocus() {
         guard let window else { return }
         let coordinator = BoringViewCoordinator.shared
-        if coordinator.keyHandoffWindow == window.windowNumber {
-            coordinator.keyHandoffWindow = nil
+        if coordinator.keyHandoffWindow == window.windowNumber, coordinator.isTypingTabCurrent {
             return
         }
         guard window.isKeyWindow else { return }
