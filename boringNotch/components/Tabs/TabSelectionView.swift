@@ -65,6 +65,11 @@ struct TabSelectionView: View {
             withAnimation(.smooth) {
                 coordinator.currentView = tab.view
             }
+            // Clicking Currency puts the cursor in its field (same path as the tab hotkeys).
+            if tab.view == .currency, let window = NSApp.currentEvent?.window,
+               let delegate = NSApp.delegate as? AppDelegate {
+                delegate.focusTypingTab(.currency, in: window)
+            }
         }
         .frame(width: Self.columnWidth, height: Self.buttonHeight)
         .foregroundStyle(tab.view == coordinator.currentView ? .white : .gray)

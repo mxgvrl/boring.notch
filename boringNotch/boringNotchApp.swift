@@ -673,7 +673,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Makes `window` key on typing tab `tab` and queues the field focus. Shared by the tab hotkeys and openAIChat.
     @MainActor
-    private func focusTypingTab(_ tab: NotchViews, in window: NSWindow) {
+    func focusTypingTab(_ tab: NotchViews, in window: NSWindow) {
         // Another screen's notch holding key: close it first. Its resign-key handler would
         // otherwise close it later and reset the shared currentView. close() resets the tab
         // and the hand-off flag, so both are reasserted here in the same main-thread pass.
