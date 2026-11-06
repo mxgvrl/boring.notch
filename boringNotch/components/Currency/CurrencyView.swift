@@ -169,8 +169,17 @@ struct CurrencyView: View {
         guard let target = manager.pendingFocusWindow, let window, window.windowNumber == target else { return }
         manager.pendingFocusWindow = nil
         focused = manager.source
+        selectAllWhenReady(in: window, attemptsLeft: 5)
+    }
+
+    /// The field editor appears a tick or two after `focused` is set; retry until it does.
+    private func selectAllWhenReady(in window: NSWindow, attemptsLeft: Int) {
         DispatchQueue.main.async {
-            (NSApp.keyWindow?.firstResponder as? NSTextView)?.selectAll(nil)
+            if let editor = window.firstResponder as? NSTextView {
+                editor.selectAll(nil)
+            } else if attemptsLeft > 1 {
+                selectAllWhenReady(in: window, attemptsLeft: attemptsLeft - 1)
+            }
         }
     }
 

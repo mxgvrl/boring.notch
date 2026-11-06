@@ -55,7 +55,6 @@ final class CurrencyManager: ObservableObject {
 
     private static let url = URL(string: "https://api.frankfurter.dev/v1/latest?base=EUR&symbols=USD,PLN")!
     private static let staleAfter: TimeInterval = 3600
-    private static let rateDateStaleAfter: TimeInterval = 3 * 24 * 3600
 
     private init() {
         if let usd = Defaults[.currencyRateUSD], let pln = Defaults[.currencyRatePLN],
@@ -158,7 +157,10 @@ final class CurrencyManager: ObservableObject {
 
     var isRateDateStale: Bool {
         guard let rates, let d = Self.dateParser.date(from: rates.rateDate) else { return false }
-        return Date().timeIntervalSince(d) > Self.rateDateStaleAfter
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+        let days = cal.dateComponents([.day], from: cal.startOfDay(for: d), to: cal.startOfDay(for: Date())).day ?? 0
+        return days > 3
     }
 
     func refreshIfStale() {
