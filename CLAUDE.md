@@ -63,6 +63,11 @@ empty context and returns under 60 lines (plan), 30 (coder), 40 (reviewer);
 the orchestrator passes the plan to the coder verbatim and the reviewer gets
 the task text only. Do not paste file contents between agents; name the files.
 
+**Base commit.** Before the first agent runs, the orchestrator records
+`git rev-parse HEAD` as the task's base and passes it to the reviewer.
+`main...HEAD` is wrong here: `custom` carries every earlier customisation, so
+it would review all of them, not this task.
+
 ### Verification is the project's, not the agent's
 
 Build, test and run commands live in this `CLAUDE.md` (fill in the block
@@ -174,6 +179,7 @@ mediaremote-adapter/            готовый MediaRemoteAdapter.framework (б�
 - `@ObservedObject var coordinator = BoringViewCoordinator.shared` и синглтоны менеджеров (`MusicManager.shared`, `WebcamManager.shared`…);
 - настройки читаются как `Defaults[.key]` или `@Default(.key)`; новый ключ — в `models/Constants.swift`, тумблер для него — в нужном разделе `SettingsView.swift`.
 - прокручиваемые области внутри вкладки (`ScrollView`, `TextEditor`) ставят `vm.isHoveringScrollableContent` в `.onHover` и сбрасывают в `.onDisappear`: иначе оконный монитор скролла (`PanGesture`) превращает их прокрутку в жест закрытия выреза свайпом вверх.
+- строки UI пишем по-английски, как во всём приложении: системный язык пользователя `en-US`, русских переводов для своих строк не добавляем.
 
 Пример: `NotchHomeView` (`components/Notch/NotchHomeView.swift`) — `HStack` из `MusicPlayerView`, `CalendarView` (если `Defaults[.showCalendar]`) и камеры (если `Defaults[.showMirror]`). `ShelfView` — более крупная вкладка с MVVM (Models/Services/ViewModels/Views).
 

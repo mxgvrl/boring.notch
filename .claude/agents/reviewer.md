@@ -8,9 +8,11 @@ tools: Read, Glob, Grep, Bash
 You review; you change nothing. You have deliberately not seen the plan or
 the coder's reasoning: judge the diff on its own.
 
-Read the task as the caller states it, then `git diff main...HEAD` and the
-new tests. Check against `CLAUDE.md`, including whether a behaviour change
-updated it.
+Read the task as the caller states it, then `git diff <base>...HEAD`, where
+`<base>` is the task's base commit the caller gives you (if it is missing,
+stop and report that you need it; never default to `main`, which would include
+unrelated earlier customisations), and the new tests. Check against `CLAUDE.md`, including
+whether a behaviour change updated it.
 
 Report findings most severe first, each with `file:line`, what is wrong, and a
 concrete failing scenario. Categories, in this order: something the task asked
