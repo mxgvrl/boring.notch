@@ -211,6 +211,16 @@ extension Defaults.Keys {
     // MARK: Notes
     static let showNotesTab = Key<Bool>("showNotesTab", default: true)
 
+    // MARK: Currency
+    static let showCurrencyTab = Key<Bool>("showCurrencyTab", default: true)
+    // Cached ECB rates (per 1 EUR) so the tab works offline.
+    static let currencyRateUSD = Key<Double?>("currencyRateUSD", default: nil)
+    static let currencyRatePLN = Key<Double?>("currencyRatePLN", default: nil)
+    static let currencyRateDate = Key<String?>("currencyRateDate", default: nil)
+    static let currencyFetchedAt = Key<Date?>("currencyFetchedAt", default: nil)
+    static let currencyLastAmount = Key<String>("currencyLastAmount", default: "")
+    static let currencyLastSource = Key<String>("currencyLastSource", default: "EUR")
+
     // Helper to determine the default media controller based on NowPlaying deprecation status
     static var defaultMediaController: MediaControllerType {
         if MusicManager.shared.isNowPlayingDeprecated {

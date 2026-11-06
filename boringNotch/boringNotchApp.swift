@@ -437,7 +437,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         try? await Task.sleep(for: .seconds(8))
                         guard !Task.isCancelled, let viewModel, viewModel.notchState == .open else { return }
                         let hovering = window?.frame.contains(NSEvent.mouseLocation) ?? false
-                        if !hovering && !TranslatorManager.shared.keepsNotchOpen && !AIChatManager.shared.keepsNotchOpen && !NotesManager.shared.keepsNotchOpen {
+                        if !hovering && !TranslatorManager.shared.keepsNotchOpen && !AIChatManager.shared.keepsNotchOpen && !NotesManager.shared.keepsNotchOpen && !CurrencyManager.shared.keepsNotchOpen {
                             viewModel.close()
                             return
                         }
@@ -465,6 +465,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 // The focused field holds the notch open via keepsNotchOpen.
                 if let notchWindow {
                     self.focusTypingTab(.aiChat, in: notchWindow)
+                } else {
+                    self.coordinator.keyHandoffWindow = nil
+                }
+            }
+        }
+
+        KeyboardShortcuts.onKeyUp(for: .openCurrency) { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self = self, Defaults[.showCurrencyTab] else { return }
+                let (viewModel, notchWindow) = self.notchUnderMouse()
+                self.closeNotchTask?.cancel()
+                self.coordinator.currentView = .currency
+                viewModel.open()
+                if let notchWindow {
+                    self.focusTypingTab(.currency, in: notchWindow)
                 } else {
                     self.coordinator.keyHandoffWindow = nil
                 }
@@ -642,7 +657,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled, let viewModel, viewModel.notchState == .open else { return }
             let hovering = window?.frame.contains(NSEvent.mouseLocation) ?? false
-            if !hovering && !TranslatorManager.shared.keepsNotchOpen && !AIChatManager.shared.keepsNotchOpen && !NotesManager.shared.keepsNotchOpen {
+            if !hovering && !TranslatorManager.shared.keepsNotchOpen && !AIChatManager.shared.keepsNotchOpen && !NotesManager.shared.keepsNotchOpen && !CurrencyManager.shared.keepsNotchOpen {
                 viewModel.close()
             }
         }
@@ -673,6 +688,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         case .translator: TranslatorManager.shared.pendingFocusWindow = window.windowNumber
         case .aiChat: AIChatManager.shared.pendingFocusWindow = window.windowNumber
         case .notes: NotesManager.shared.pendingFocusWindow = window.windowNumber
+        case .currency: CurrencyManager.shared.pendingFocusWindow = window.windowNumber
         default: break
         }
         // didResignKey of the previous key window is posted synchronously inside makeKey().
@@ -682,7 +698,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func isTypingTab(_ v: NotchViews) -> Bool {
-        v == .translator || v == .aiChat || v == .notes
+        v == .translator || v == .aiChat || v == .notes || v == .currency
     }
 
     /// The notch view model and window on the screen under the pointer (or the single notch).

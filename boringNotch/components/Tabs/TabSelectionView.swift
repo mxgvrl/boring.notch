@@ -20,7 +20,8 @@ let tabs = [
     TabModel(label: "Shelf", icon: "tray.fill", view: .shelf),
     TabModel(label: "Translator", icon: "character.bubble.fill", view: .translator),
     TabModel(label: "Ask AI", icon: "sparkles", view: .aiChat),
-    TabModel(label: "Notes", icon: "note.text", view: .notes)
+    TabModel(label: "Notes", icon: "note.text", view: .notes),
+    TabModel(label: "Currency", icon: "dollarsign.arrow.circlepath", view: .currency)
 ]
 
 struct TabSelectionView: View {
@@ -31,19 +32,20 @@ struct TabSelectionView: View {
     @Default(.showTranslatorTab) var showTranslatorTab
     @Default(.showAIChatTab) var showAIChatTab
     @Default(.showNotesTab) var showNotesTab
+    @Default(.showCurrencyTab) var showCurrencyTab
     @Namespace var animation
 
     private var visibleTabs: [TabModel] {
         TabColumnAvailability.visibleTabs(
             boringShelf: boringShelf, translator: showTranslatorTab,
-            aiChat: showAIChatTab, notes: showNotesTab)
+            aiChat: showAIChatTab, notes: showNotesTab, currency: showCurrencyTab)
     }
 
     private var isAvailable: Bool {
         TabColumnAvailability.isAvailable(
             tabsNonEmpty: !tvm.isEmpty, alwaysShowTabs: coordinator.alwaysShowTabs,
             boringShelf: boringShelf, clipboardHistory: shelfClipboardHistory,
-            translator: showTranslatorTab, aiChat: showAIChatTab, notes: showNotesTab)
+            translator: showTranslatorTab, aiChat: showAIChatTab, notes: showNotesTab, currency: showCurrencyTab)
     }
 
     static let buttonHeight: CGFloat = 22
@@ -107,14 +109,14 @@ struct TabSelectionView: View {
 enum TabColumnAvailability {
     static func isAvailable(
         tabsNonEmpty: Bool, alwaysShowTabs: Bool, boringShelf: Bool, clipboardHistory: Bool,
-        translator: Bool, aiChat: Bool, notes: Bool
+        translator: Bool, aiChat: Bool, notes: Bool, currency: Bool
     ) -> Bool {
         ((tabsNonEmpty || alwaysShowTabs) && boringShelf)
             || (boringShelf && clipboardHistory)
-            || translator || aiChat || notes
+            || translator || aiChat || notes || currency
     }
 
-    static func visibleTabs(boringShelf: Bool, translator: Bool, aiChat: Bool, notes: Bool) -> [TabModel] {
+    static func visibleTabs(boringShelf: Bool, translator: Bool, aiChat: Bool, notes: Bool, currency: Bool) -> [TabModel] {
         tabs.filter { tab in
             switch tab.view {
             case .home: return true
@@ -122,6 +124,7 @@ enum TabColumnAvailability {
             case .translator: return translator
             case .aiChat: return aiChat
             case .notes: return notes
+            case .currency: return currency
             }
         }
     }
@@ -129,7 +132,8 @@ enum TabColumnAvailability {
     static func currentVisibleTabs() -> [TabModel] {
         visibleTabs(
             boringShelf: Defaults[.boringShelf], translator: Defaults[.showTranslatorTab],
-            aiChat: Defaults[.showAIChatTab], notes: Defaults[.showNotesTab])
+            aiChat: Defaults[.showAIChatTab], notes: Defaults[.showNotesTab],
+            currency: Defaults[.showCurrencyTab])
     }
 
     @MainActor
@@ -139,7 +143,7 @@ enum TabColumnAvailability {
             alwaysShowTabs: BoringViewCoordinator.shared.alwaysShowTabs,
             boringShelf: Defaults[.boringShelf], clipboardHistory: Defaults[.shelfClipboardHistory],
             translator: Defaults[.showTranslatorTab], aiChat: Defaults[.showAIChatTab],
-            notes: Defaults[.showNotesTab])
+            notes: Defaults[.showNotesTab], currency: Defaults[.showCurrencyTab])
     }
 }
 
@@ -152,12 +156,13 @@ struct TabColumnSpacer: View {
     @Default(.showTranslatorTab) var showTranslatorTab
     @Default(.showAIChatTab) var showAIChatTab
     @Default(.showNotesTab) var showNotesTab
+    @Default(.showCurrencyTab) var showCurrencyTab
 
     var body: some View {
         let on = TabColumnAvailability.isAvailable(
             tabsNonEmpty: !tvm.isEmpty, alwaysShowTabs: coordinator.alwaysShowTabs,
             boringShelf: boringShelf, clipboardHistory: shelfClipboardHistory,
-            translator: showTranslatorTab, aiChat: showAIChatTab, notes: showNotesTab)
+            translator: showTranslatorTab, aiChat: showAIChatTab, notes: showNotesTab, currency: showCurrencyTab)
         Color.clear.frame(width: on ? TabSelectionView.columnWidth + 8 : 0, height: 0)
     }
 }

@@ -60,6 +60,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Notes") {
                     Label("Notes", systemImage: "note.text")
                 }
+                NavigationLink(value: "Currency") {
+                    Label("Currency", systemImage: "dollarsign.arrow.circlepath")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -100,6 +103,8 @@ struct SettingsView: View {
                     AIChatSettings()
                 case "Notes":
                     NotesSettings()
+                case "Currency":
+                    CurrencySettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":
@@ -1718,6 +1723,11 @@ struct Shortcuts: View {
                 KeyboardShortcuts.Recorder("Open Ask AI:", name: .openAIChat)
             } header: {
                 Text("Ask AI")
+            }
+            Section {
+                KeyboardShortcuts.Recorder("Open Currency converter:", name: .openCurrency)
+            } header: {
+                Text("Currency")
             }
         }
         .accentColor(.effectiveAccent)

@@ -30,6 +30,7 @@ public enum NotchViews {
     case translator
     case aiChat
     case notes
+    case currency
 }
 
 enum SettingsEnum {

@@ -18,5 +18,6 @@ extension KeyboardShortcuts.Name {
     static let nextNotchTab = Self("nextNotchTab", default: .init(.i, modifiers: [.control]))
     static let previousNotchTab = Self("previousNotchTab", default: .init(.i, modifiers: [.control, .shift]))
     static let openAIChat = Self("openAIChat")
+    static let openCurrency = Self("openCurrency")
     static let translateSelection = Self("translateSelection", default: .init(.t, modifiers: [.control, .option]))
 }

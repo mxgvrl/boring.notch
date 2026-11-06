@@ -357,6 +357,8 @@ struct ContentView: View {
                             AIChatView()
                         case .notes:
                             NotesView()
+                        case .currency:
+                            CurrencyView()
                         }
                     }
                 }
@@ -571,7 +573,7 @@ struct ContentView: View {
                     }
                     
                     if self.vm.notchState == .open && !self.vm.isBatteryPopoverActive && !SharingStateManager.shared.preventNotchClose
-                        && !TranslatorManager.shared.keepsNotchOpen && !AIChatManager.shared.keepsNotchOpen && !NotesManager.shared.keepsNotchOpen {
+                        && !TranslatorManager.shared.keepsNotchOpen && !AIChatManager.shared.keepsNotchOpen && !NotesManager.shared.keepsNotchOpen && !CurrencyManager.shared.keepsNotchOpen {
                         self.vm.close()
                     }
                 }

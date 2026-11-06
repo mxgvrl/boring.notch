@@ -59,6 +59,7 @@ class BoringViewCoordinator: ObservableObject {
     var keyMovingBetweenNotches = false
     var isTypingTabCurrent: Bool {
         currentView == .translator || currentView == .aiChat || currentView == .notes
+            || currentView == .currency
     }
     @Published var helloAnimationRunning: Bool = false
     private var sneakPeekDispatch: DispatchWorkItem?
